@@ -1,0 +1,4 @@
+https://github.com/PacktPublishing/Python-Machine-Learning-Third-Edition/tree/master/ch18
+
+https://github.com/PacktPublishing/Deep-Reinforcement-Learning-Hands-On
+https://github.com/PacktPublishing/Deep-Reinforcement-Learning-Hands-On-Second-Edition
