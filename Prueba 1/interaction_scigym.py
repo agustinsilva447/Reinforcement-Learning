@@ -9,9 +9,7 @@ else:
     raise ValueError
 
 actions = range(num_actions)
-
 observation = env.reset()
-
 action = np.random.choice(actions)
 
 done = False
