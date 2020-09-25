@@ -20,8 +20,8 @@ while done==False or i>100:
     print("Choose an action:")
     action = input()
     if (action.isdigit()) and (int(action) in available['available_actions']):
-        i += 1
         action = int(action)
+        i += 1
         (observation, reward, done, available) = env.step(action)
         print("----------")
         print("Obsevation {}: {}".format(i, observation))
