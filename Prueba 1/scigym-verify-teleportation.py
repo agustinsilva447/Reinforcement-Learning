@@ -9,24 +9,30 @@ else:
 
 actions = range(num_actions)
 observation = env.reset()
+available = {}
+available['available_actions'] = range(17)
 i = 0
 done = False
-print("Cantidad de acciones:", actions)
+print("Number of possible actions:", actions)
 print("Obsevation 0: {}".format(observation))
 
-action = np.random.choice(actions)
-print("Action 0: {}".format(action))
-
-while done==False or i>100:
-    i += 1  
-    (observation, reward, done, _) = env.step(action)
-    print("----------")
-    print("Obsevation {}: {}".format(i, observation))
-    print("Reward {}: {}".format(i, reward))
-    print("Done {}: {}".format(i, done))
-    print("Info {}: {}".format(i, _['available_actions']))
-    if bool(_['available_actions']):
-        action = np.random.choice(_['available_actions'])
-        print("Action {}: {}".format(i, action))
+while done==False or i>100:  
+    print("Choose an action:")
+    action = input()
+    if (action.isdigit()) and (int(action) in available['available_actions']):
+        i += 1
+        action = int(action)
+        (observation, reward, done, available) = env.step(action)
+        print("----------")
+        print("Obsevation {}: {}".format(i, observation))
+        print("Reward {}: {}".format(i, reward))
+        print("Done {}: {}".format(i, done))
+        print("Available actions {}: {}".format(i, available['available_actions']))
+        if bool(available['available_actions']):
+            print("Action {}: {}".format(i, action))
+        else:
+            print("No more available actions")
     else:
-        print("No more available actions")
+        print("----------")
+        print("Actions not available")
+        print("Available actions {}: {}".format(i, available['available_actions']))
