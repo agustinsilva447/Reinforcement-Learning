@@ -70,6 +70,7 @@ while (reward == 0) and (j<1000) :
         print("Target not met.")
     elif reward == 1:
         print("Number of actions: {}. Actions (gates): {}.".format(i, actions_gate))
+        print(circuit)
         #print("Actions (numbs): {}.".format(actions_int))
         #print("Congratulations!")
 
