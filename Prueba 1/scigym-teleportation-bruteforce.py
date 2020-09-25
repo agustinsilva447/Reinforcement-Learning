@@ -52,7 +52,6 @@ while (reward == 0) and (j<1000) :
     if reward == 0:
         print("Target not met.")
     elif reward == 1:
-        print("Number of actions: {}.".format(i))
+        print("Number of actions: {}. Actions (gates): {}.".format(i, actions_gate))
         #print("Actions (numbs): {}.".format(actions_int))
-        print("Actions (gates): {}.".format(actions_gate))
         #print("Congratulations!")
