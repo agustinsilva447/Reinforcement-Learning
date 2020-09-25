@@ -9,16 +9,23 @@ else:
 
 actions = range(num_actions)
 observation = env.reset()
+action = np.random.choice(actions)
+i = 0
+done = False
 print("Cantidad de acciones:", actions)
-print("Obsevation 0:", observation)
-print("----------")
+print("Obsevation 0: {}".format(observation))
+print("Action 0: {}".format(action))
 
-for i in range(1,5):
-    action = np.random.choice(actions)
+while done==False or i>100:
+    i += 1  
     (observation, reward, done, _) = env.step(action)
+    print("----------")
     print("Obsevation {}: {}".format(i, observation))
     print("Reward {}: {}".format(i, reward))
     print("Done {}: {}".format(i, done))
-    print("Info {}: {}".format(i, _))
-    print("Action {}: {}".format(i, action))
-    print("----------")
+    print("Info {}: {}".format(i, _['available_actions']))
+    if bool(_['available_actions']):
+        action = np.random.choice(_['available_actions'])
+        print("Action {}: {}".format(i, action))
+    else:
+        print("No more available actions")
