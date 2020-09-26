@@ -1,8 +1,10 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import scigym
-import cirq
-from cirq.ops import H, T, CNOT, measure
-from cirq.circuits import InsertStrategy
+from qiskit import Aer
+from qiskit import execute
+from qiskit import QuantumCircuit
+from qiskit.visualization import plot_histogram
 
 j = 0; reward = 0
 while (reward == 0) and (j<1000) :
@@ -28,39 +30,53 @@ while (reward == 0) and (j<1000) :
 
 if reward == 1:
     actions_gate = []
-    q0, q1, q2 = [cirq.GridQubit(i, 0) for i in range(3)]
-    circuit = cirq.Circuit()
+    circuit = QuantumCircuit(3,3)
+
+    circuit.x(0) 
+    circuit.barrier() 
+    circuit.h(1)
+    circuit.cx(1,2)
+    circuit.barrier() 
+
     for action in actions_int:
         if action == 0:
             actions_gate.append('H_0')
-            circuit.append([H(q0)], strategy=InsertStrategy.NEW)
+            circuit.h(0)
         elif action == 1:
             actions_gate.append('T_0')
-            circuit.append([T(q0)], strategy=InsertStrategy.NEW)
+            circuit.t(0)
         elif action == 2:
             actions_gate.append('H_1')
-            circuit.append([H(q1)], strategy=InsertStrategy.NEW)
+            circuit.h(1)
         elif action == 3:
             actions_gate.append('T_1')
-            circuit.append([T(q1)], strategy=InsertStrategy.NEW)
+            circuit.t(1)
         elif action == 4:
             actions_gate.append('H_2')
-            circuit.append([H(q2)], strategy=InsertStrategy.NEW)
+            circuit.h(2)
         elif action == 5:
             actions_gate.append('T_2')
-            circuit.append([T(q2)], strategy=InsertStrategy.NEW)
+            circuit.t(2)
         elif action == 6:
             actions_gate.append('CNOT_01')
-            circuit.append([CNOT(q0, q1)], strategy=InsertStrategy.NEW)
+            circuit.cx(0,1)
         elif action == 7:
             actions_gate.append('MEASURE_0')
-            circuit.append([measure(q0)], strategy=InsertStrategy.NEW)
+            circuit.measure(0, 0) 
         elif action == 8:
             actions_gate.append('MEASURE_1')
-            circuit.append([measure(q1)], strategy=InsertStrategy.NEW)
+            circuit.measure(1, 1) 
         elif action == 9:
             actions_gate.append('MEASURE_2')
-            circuit.append([measure(q2)], strategy=InsertStrategy.NEW)            
+            circuit.measure(2, 2) 
 
-    print("\nNumber of actions: {}. Actions (gates): {}.\nQuantum Circuit:".format(i, actions_gate))
+    circuit.measure(2, 2)
+    print("\nNumber of actions: {}. Actions (gates): {}.\nQuantum Circuit 1:".format(i, actions_gate))
     print(circuit)
+
+    backend1 = Aer.get_backend('qasm_simulator')
+    job1 = execute(circuit, backend=backend1, shots=1000)
+    result1 = job1.result()
+    measurement1 = result1.get_counts(circuit)
+    plot_histogram(measurement1)
+    plt.show()
