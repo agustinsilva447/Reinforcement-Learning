@@ -24,7 +24,7 @@ for k in range(1):
                 if bool(available['available_actions']):
                     print("Action: {}.".format(action))
                 else:
-                    print("No more available actions.")
+                    print("No more available actions.\n")
 
     if reward == 1:
         actions_gate = []
