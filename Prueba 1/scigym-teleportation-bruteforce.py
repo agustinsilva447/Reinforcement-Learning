@@ -71,20 +71,24 @@ if reward == 1:
             circuit.barrier() 
         elif action == 7:
             actions_gate.append('MEASURE_0')
-            circuit.measure(0, 0) 
-            circuit.barrier() 
+            #circuit.measure(0, 0) 
+            #circuit.barrier() 
         elif action == 8:
             actions_gate.append('MEASURE_1')
-            circuit.measure(1, 1) 
-            circuit.barrier() 
+            #circuit.measure(1, 1) 
+            #circuit.barrier() 
         elif action == 9:
             actions_gate.append('MEASURE_2')
             #circuit.measure(2, 2) 
             #circuit.barrier() 
 
-    circuit.measure(2, 2)
+    circuit.cz(0, 2)
+    circuit.cx(1, 2)
     circuit.barrier() 
-    print("\nNumber of actions: {}. Actions (gates): {}.\nQuantum Circuit 1:".format(i, actions_gate))
+    circuit.measure([0, 1, 2], [0, 1, 2]) 
+    circuit.barrier() 
+
+    print("\nNumber of actions: {}. Actions (gates): {}.\nQuantum Circuit:".format(i, actions_gate))
     print(circuit)
 
     backend = Aer.get_backend('qasm_simulator')
