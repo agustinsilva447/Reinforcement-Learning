@@ -6,9 +6,8 @@ from qiskit import execute
 from qiskit import QuantumCircuit
 from qiskit.visualization import plot_histogram, plot_state_city
 
-for k in range(14):
+for k in range(1):
     j = 0; reward = 0
-    #while (reward == 0) and (j<1000) :
     while (reward == 0):
         i = 0; j += 1
         env = scigym.make('teleportation-v0')  
@@ -20,13 +19,12 @@ for k in range(14):
             i += 1
             action = np.random.choice(available['available_actions'])
             (observation, reward, done, available) = env.step(action)
-            #print("{}, {} --> Reward: {}. Done: {}. Available actions: {}.".format(j, i, reward, done, available['available_actions']), end=" ")      
-            #if bool(available['available_actions']):
-            #    print("Action: {}.".format(action))
-            #else:
-            #    print("No more available actions.")
-        #if reward == 0:
-        #    print("Target not met.")
+            if ((j%500)==0):
+                print("{}, {} --> Reward: {}. Done: {}. Available actions: {}.".format(j, i, reward, done, available['available_actions']), end=" ")      
+                if bool(available['available_actions']):
+                    print("Action: {}.".format(action))
+                else:
+                    print("No more available actions.")
 
     if reward == 1:
         actions_gate = []
@@ -80,11 +78,11 @@ for k in range(14):
                 circuit.barrier() 
             elif (action == 14) or (action == 15):
                 actions_gate.append('MEASURE_2')
-                #circuit.measure(2, 2) 
-                #circuit.barrier() 
+                circuit.measure(2, 2) 
+                circuit.barrier() 
 
-        print("\n{}: Number of actions: {}. Actions (gates): {}.".format(j, i, actions_gate))
-        #print("Observations: {}.".format(observation))
+        print("{}: Number of actions: {}. Actions (gates): {}.".format(j, i, actions_gate))
+        print("Observations: {}.".format(observation))
         outcome = [] 
         if 13 in observation:
             outcome.append(1)
@@ -93,35 +91,31 @@ for k in range(14):
         if 11 in observation:
             outcome.append(1)
         if 10 in observation:
-            outcome.append(0)
-        #print("[qubit1, qubit0] =", outcome)     
+            outcome.append(0)  
         
-        circuit.cz(0,2)
-        #circuit.cx(1,2)  
         circuit.measure([2], [2]) 
         circuit.barrier() 
-        #print("Quantum circuit:\n{}".format(circuit))
+        print("Quantum circuit:\n{}".format(circuit))
+        print("[qubit1, qubit0] = {}".format(outcome))
 
-        #backend = Aer.get_backend('statevector_simulator')
-        #result = execute(circuit, backend=backend).result()    
-        #statevector = result.get_statevector(circuit)
-        #print("State vector: {}".format(statevector))
-        #fig = plot_state_city(statevector)
-        #fig.savefig("/home/agustinsilva447/Github/Reinforcement-Learning/Prueba 1/state.png")
+        backend = Aer.get_backend('statevector_simulator')
+        result = execute(circuit, backend=backend).result()    
+        statevector = result.get_statevector(circuit)
+        print("State vector: {}".format(statevector))
+        fig = plot_state_city(statevector)
+        fig.savefig("/home/agustinsilva447/Github/Reinforcement-Learning/Prueba 1/state.png")
 
         backend = Aer.get_backend('qasm_simulator')
         result = execute(circuit, backend=backend, shots=1000).result()
         counts = result.get_counts(circuit)
-        #print("Counts: {}".format(counts))
-        #fig = plot_histogram(counts) 
-        #fig.savefig("/home/agustinsilva447/Github/Reinforcement-Learning/Prueba 1/counts.png")
+        print("Counts: {}".format(counts))
+        fig = plot_histogram(counts) 
+        fig.savefig("/home/agustinsilva447/Github/Reinforcement-Learning/Prueba 1/counts.png")
 
         for out in counts.keys():
             if (int(out[2])==outcome[1]) and (int(out[1])==outcome[0]):
                 output = int(out[0])
                 if input == output:
-                    print("SUCCESSFUL communication!. Input qubit0 = {}. Output qubit2 = {}. [qubit1, qubit0] = {}".format(input, output, outcome))
+                    print("SUCCESSFUL communication!. Input qubit0 = {}. Output qubit2 = {}.".format(input, output))
                 else :
-                    print("FAILED communication!. Input qubit0 = {}. Output qubit2 = {}. [qubit1, qubit0] = {}".format(input, output, outcome))
-    elif reward == 0:
-        print("Target not met.")
+                    print("FAILED communication!. Input qubit0 = {}. Output qubit2 = {}.".format(input, output))
