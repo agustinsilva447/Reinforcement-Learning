@@ -91,16 +91,16 @@ if reward == 1:
     print("\nNumber of actions: {}. Actions (gates): {}.\nQuantum Circuit:".format(i, actions_gate))
     print(circuit)
 
-    backend = Aer.get_backend('qasm_simulator')
-    result = execute(circuit, backend=backend, shots=1000).result()
-    counts = result.get_counts(circuit)
-    print(counts)
-    fig = plot_histogram(counts) 
-    fig.savefig("/home/agustinsilva447/Github/Reinforcement-Learning/Prueba 1/counts.png")
-
     backend = Aer.get_backend('statevector_simulator')
     result = execute(circuit, backend=backend).result()    
     statevector = result.get_statevector(circuit)
     print(statevector)
     fig = plot_state_city(statevector)
     fig.savefig("/home/agustinsilva447/Github/Reinforcement-Learning/Prueba 1/state.png")
+
+    backend = Aer.get_backend('qasm_simulator')
+    result = execute(circuit, backend=backend, shots=1000).result()
+    counts = result.get_counts(circuit)
+    print(counts)
+    fig = plot_histogram(counts) 
+    fig.savefig("/home/agustinsilva447/Github/Reinforcement-Learning/Prueba 1/counts.png")
