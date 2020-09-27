@@ -4,7 +4,7 @@ import scigym
 from qiskit import Aer
 from qiskit import execute
 from qiskit import QuantumCircuit
-from qiskit.visualization import plot_histogram
+from qiskit.visualization import plot_histogram, plot_state_city
 
 j = 0; reward = 0
 while (reward == 0) and (j<1000) :
@@ -32,8 +32,10 @@ if reward == 1:
     actions_gate = []
     circuit = QuantumCircuit(3,3)
 
+    #setting input state
     circuit.x(0) 
     circuit.barrier() 
+    #creating bell state
     circuit.h(1)
     circuit.cx(1,2)
     circuit.barrier() 
@@ -42,41 +44,59 @@ if reward == 1:
         if action == 0:
             actions_gate.append('H_0')
             circuit.h(0)
+            circuit.barrier() 
         elif action == 1:
             actions_gate.append('T_0')
             circuit.t(0)
+            circuit.barrier() 
         elif action == 2:
             actions_gate.append('H_1')
             circuit.h(1)
+            circuit.barrier() 
         elif action == 3:
             actions_gate.append('T_1')
             circuit.t(1)
+            circuit.barrier() 
         elif action == 4:
             actions_gate.append('H_2')
             circuit.h(2)
+            circuit.barrier() 
         elif action == 5:
             actions_gate.append('T_2')
             circuit.t(2)
+            circuit.barrier() 
         elif action == 6:
             actions_gate.append('CNOT_01')
             circuit.cx(0,1)
+            circuit.barrier() 
         elif action == 7:
             actions_gate.append('MEASURE_0')
             circuit.measure(0, 0) 
+            circuit.barrier() 
         elif action == 8:
             actions_gate.append('MEASURE_1')
             circuit.measure(1, 1) 
+            circuit.barrier() 
         elif action == 9:
             actions_gate.append('MEASURE_2')
-            circuit.measure(2, 2) 
+            #circuit.measure(2, 2) 
+            #circuit.barrier() 
 
     circuit.measure(2, 2)
+    circuit.barrier() 
     print("\nNumber of actions: {}. Actions (gates): {}.\nQuantum Circuit 1:".format(i, actions_gate))
     print(circuit)
 
-    backend1 = Aer.get_backend('qasm_simulator')
-    job1 = execute(circuit, backend=backend1, shots=1000)
-    result1 = job1.result()
-    measurement1 = result1.get_counts(circuit)
-    plot_histogram(measurement1)
-    plt.show()
+    backend = Aer.get_backend('qasm_simulator')
+    result = execute(circuit, backend=backend, shots=1000).result()
+    counts = result.get_counts(circuit)
+    print(counts)
+    fig = plot_histogram(counts) 
+    fig.savefig("/home/agustinsilva447/Github/Reinforcement-Learning/Prueba 1/counts.png")
+
+    backend = Aer.get_backend('statevector_simulator')
+    result = execute(circuit, backend=backend).result()    
+    statevector = result.get_statevector(circuit)
+    print(statevector)
+    fig = plot_state_city(statevector)
+    fig.savefig("/home/agustinsilva447/Github/Reinforcement-Learning/Prueba 1/state.png")
