@@ -21,7 +21,6 @@ def pre_circuit(circuit):
     circuit.h(1)
     circuit.cx(1,2)
     circuit.barrier()
-
     return circuit, input
 
 def teleportation_circuit(observation, circuit):
@@ -67,7 +66,6 @@ def teleportation_circuit(observation, circuit):
             actions_gate.append('MEASURE_2')
             circuit.measure(2, 2) 
             circuit.barrier() 
-    
     return circuit, actions_gate
 
 def circuit_measurement(observation, circuit):
@@ -83,7 +81,6 @@ def circuit_measurement(observation, circuit):
         outcome.append(1)
     if 10 in observation:
         outcome.append(0) 
-    
     return circuit, outcome
 
 def circuit_statevector_solver(circuit):    
@@ -93,7 +90,6 @@ def circuit_statevector_solver(circuit):
     print("State vector: {}".format(statevector))
     fig = plot_state_city(statevector)
     fig.savefig("/home/agustinsilva447/Github/Reinforcement-Learning/Prueba 1/state.png")
-
     return statevector
 
 def circuit_counts_solver(circuit):
@@ -103,7 +99,6 @@ def circuit_counts_solver(circuit):
     print("Counts: {}".format(counts))
     fig = plot_histogram(counts) 
     fig.savefig("/home/agustinsilva447/Github/Reinforcement-Learning/Prueba 1/counts.png")
-
     return counts
 
 j = 0; reward = 0
@@ -129,7 +124,7 @@ print("{}: Number of actions: {}. Actions (gates): {}.".format(j, i, actions_gat
 print("Observations: {}.".format(observation))     
 print("Quantum circuit:\n{}".format(circuit))
 print("[qubit1, qubit0] = {}".format(outcome))
-#statevector = circuit_statevector_solver(circuit)
+statevector = circuit_statevector_solver(circuit)
 counts = circuit_counts_solver(circuit)
 
 for out in counts.keys():
