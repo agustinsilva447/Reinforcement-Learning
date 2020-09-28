@@ -29,42 +29,34 @@ def teleportation_circuit(observation, circuit):
         if action == 0:
             actions_gate.append('H_0')
             circuit.h(0)
-            circuit.barrier() 
         elif action == 1:
             actions_gate.append('T_0')
             circuit.t(0)
-            circuit.barrier() 
         elif action == 2:
             actions_gate.append('H_1')
             circuit.h(1)
-            circuit.barrier() 
         elif action == 3:
             actions_gate.append('T_1')
             circuit.t(1)
-            circuit.barrier() 
         elif action == 4:
             actions_gate.append('H_2')
             circuit.h(2)
-            circuit.barrier() 
         elif action == 5:
             actions_gate.append('T_2')
             circuit.t(2)
-            circuit.barrier() 
         elif action == 6:
             actions_gate.append('CNOT_01')
             circuit.cx(0,1)
-            circuit.barrier() 
         elif (action == 10) or (action == 11):
             actions_gate.append('MEASURE_0')
             circuit.measure(0, 0) 
-            circuit.barrier() 
         elif (action == 12) or (action == 13):
             actions_gate.append('MEASURE_1')
             circuit.measure(1, 1) 
-            circuit.barrier() 
         elif (action == 14) or (action == 15):
             actions_gate.append('MEASURE_2')
             circuit.measure(2, 2) 
+        if action < 16 :
             circuit.barrier() 
     return circuit, actions_gate
 
@@ -72,7 +64,6 @@ def circuit_measurement(observation, circuit):
     outcome = [] 
     if (14 not in observation) or (15 not in observation) :
         circuit.measure([2], [2]) 
-        circuit.barrier() 
     if 13 in observation:
         outcome.append(1)
     if 12 in observation:  
@@ -121,10 +112,10 @@ circuit, actions_gate = teleportation_circuit(observation, circuit)
 circuit, outcome = circuit_measurement(observation, circuit)
 
 print("{}: Number of actions: {}. Actions (gates): {}.".format(j, i, actions_gate))
-print("Observations: {}.".format(observation))     
+#print("Observations: {}.".format(observation))     
 print("Quantum circuit:\n{}".format(circuit))
 print("[qubit1, qubit0] = {}".format(outcome))
-statevector = circuit_statevector_solver(circuit)
+#statevector = circuit_statevector_solver(circuit)
 counts = circuit_counts_solver(circuit)
 
 for out in counts.keys():
