@@ -44,7 +44,6 @@ for _ in range(repeat):
         Q[action] = Q[action] +  1/N[action] * (reward - Q[action])
     env.reset()
     tot_rewards.append(rewards)
-
 e0 = average(tot_rewards)
 
 env.reset()
@@ -62,7 +61,6 @@ for _ in range(repeat):
         Q[action] = Q[action] +  1/N[action] * (reward - Q[action])
     env.reset()
     tot_rewards.append(rewards)
-
 e001 = average(tot_rewards)
 
 env.reset()
@@ -80,7 +78,6 @@ for _ in range(repeat):
         Q[action] = Q[action] +  1/N[action] * (reward - Q[action])
     env.reset()
     tot_rewards.append(rewards)
-
 e01 = average(tot_rewards)
 
 env.reset()
@@ -98,7 +95,6 @@ for _ in range(repeat):
         Q[action] = Q[action] +  1/N[action] * (reward - Q[action])
     env.reset()
     tot_rewards.append(rewards)
-
 e02 = average(tot_rewards)
 
 plt.plot(e0, color='green', label='e = 0 (greedy)')
