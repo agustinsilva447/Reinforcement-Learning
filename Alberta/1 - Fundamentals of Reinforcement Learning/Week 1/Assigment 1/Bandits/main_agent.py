@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from rlglue.agent import BaseAgent
-
 import numpy as np
 
 class Agent(BaseAgent):
