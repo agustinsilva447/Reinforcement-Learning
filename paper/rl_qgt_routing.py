@@ -1,9 +1,10 @@
+import copy
+import time
 import pickle                      
 import random
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
-import copy
 
 from qiskit import QuantumCircuit, Aer, execute
 from qiskit.quantum_info import Operator
@@ -125,7 +126,7 @@ def reward_qnet(rx, ry, rz):
     n1 = 10                                                                                         # cantidad de ciudades
     n2 = 100                                                                                        # cantidad de paquetes
     n3 = 10                                                                                         # distancia máxima
-    n4 = 2                                                                                          # cantidad de iteraciones
+    n4 = 5                                                                                          # cantidad de iteraciones
     p1 = [rx, ry, rz, 1]
 
     t = 0
@@ -183,8 +184,8 @@ def reward_qnet(rx, ry, rz):
 ##################################################
 
 epsilon = 0.99              # randomness
-EPS_DECAY = 0.999           
-HM_EPISODES = 500
+EPS_DECAY = 0.99           
+HM_EPISODES = 750
 NET_STATES = 1              # 1 para red solo congestionada, 2 para red congestionada o no
 N_SIZE = 3
 angulos = np.arange(0, 2 * np.pi, 2 * np.pi / np.power(2, N_SIZE))
@@ -224,3 +225,5 @@ action = [k for k, v in q_table.items() if v == max_value][0]
 print("Best action: Rx = {}. Ry = {}. Rz = {}.".format(action[0], action[1], action[2]))    
 print("Total time = {} secods.".format(reward_qnet(action[0], action[1], action[2])))
 
+with open(f"qtable-{int(time.time())}.pickle", "wb") as f:
+    pickle.dump(q_table, f)    
