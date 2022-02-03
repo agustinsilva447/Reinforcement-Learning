@@ -95,6 +95,37 @@ def crear_circuito(n, tipo):
     circ.measure(range(n), range(n))  
     return circ
 
+def state_out_new_p(x,y,z):
+
+    sqrt_2 = np.sqrt(2)
+    cos_x = np.cos(x/2)
+    sin_x = np.sin(x/2)
+    cos_y = np.cos(y/2)
+    sin_y = np.sin(y/2)
+    exp_z = np.exp(1j*z)
+    exp_m = np.exp(-1j*z)
+
+    s_0 = sqrt_2/2*(-sqrt_2/2*1j*exp_z*sin_y**2 + sqrt_2/2*exp_m*cos_y**2)*cos_x**2 - sqrt_2/2*(-sqrt_2/2*1j*exp_z*cos_y**2 + sqrt_2/2*exp_m*sin_y**2)*sin_x**2 - sqrt_2*1j*(-sqrt_2/2*1j*exp_z*sin_y*cos_y - sqrt_2/2*exp_m*sin_y*cos_y)*sin_x*cos_x + sqrt_2/2*1j*(-(-sqrt_2/2*1j*exp_z*sin_y**2 + sqrt_2/2*exp_m*cos_y**2)*sin_x**2 + (-sqrt_2/2*1j*exp_z*cos_y**2 + sqrt_2/2*exp_m*sin_y**2)*cos_x**2 - 2*1j*(-sqrt_2/2*1j*exp_z*sin_y*cos_y - sqrt_2/2*exp_m*sin_y*cos_y)*sin_x*cos_x)
+    s_1 = -sqrt_2/2*1j*(sqrt_2/2*1j*sin_y**2 + sqrt_2/2*cos_y**2)*sin_x*cos_x - sqrt_2/2*(-sqrt_2/2*sin_y*cos_y + sqrt_2/2*1j*sin_y*cos_y)*sin_x**2 + sqrt_2/2*(sqrt_2/2*sin_y*cos_y - sqrt_2/2*1j*sin_y*cos_y)*cos_x**2 - sqrt_2/2*1j*(-sqrt_2/2*sin_y**2 - sqrt_2/2*1j*cos_y**2)*sin_x*cos_x + sqrt_2/2*1j*(-1j*(sqrt_2/2*1j*sin_y**2 + sqrt_2/2*cos_y**2)*sin_x*cos_x + (-sqrt_2/2*sin_y*cos_y + sqrt_2/2*1j*sin_y*cos_y)*cos_x**2 - (sqrt_2/2*sin_y*cos_y - sqrt_2/2*1j*sin_y*cos_y)*sin_x**2 - 1j*(-sqrt_2/2*sin_y**2 - sqrt_2/2*1j*cos_y**2)*sin_x*cos_x)
+    s_2 = -sqrt_2/2*1j*(sqrt_2/2*1j*sin_y**2 + sqrt_2/2*cos_y**2)*sin_x*cos_x - sqrt_2/2*(-sqrt_2/2*sin_y*cos_y + sqrt_2/2*1j*sin_y*cos_y)*sin_x**2 + sqrt_2/2*(sqrt_2/2*sin_y*cos_y - sqrt_2/2*1j*sin_y*cos_y)*cos_x**2 - sqrt_2/2*1j*(-sqrt_2/2*sin_y**2 - sqrt_2/2*1j*cos_y**2)*sin_x*cos_x + sqrt_2/2*1j*(-1j*(sqrt_2/2*1j*sin_y**2 + sqrt_2/2*cos_y**2)*sin_x*cos_x + (-sqrt_2/2*sin_y*cos_y + sqrt_2/2*1j*sin_y*cos_y)*cos_x**2 - (sqrt_2/2*sin_y*cos_y - sqrt_2/2*1j*sin_y*cos_y)*sin_x**2 - 1j*(-sqrt_2/2*sin_y**2 - sqrt_2/2*1j*cos_y**2)*sin_x*cos_x)
+    s_3 = sqrt_2/2*(sqrt_2/2*exp_z*sin_y**2 - sqrt_2/2*1j*exp_m*cos_y**2)*cos_x**2 - sqrt_2/2*(sqrt_2/2*exp_z*cos_y**2 - sqrt_2/2*1j*exp_m*sin_y**2)*sin_x**2 - sqrt_2*1j*(sqrt_2/2*exp_z*sin_y*cos_y + sqrt_2/2*1j*exp_m*sin_y*cos_y)*sin_x*cos_x + sqrt_2/2*1j*(-(sqrt_2/2*exp_z*sin_y**2 - sqrt_2/2*1j*exp_m*cos_y**2)*sin_x**2 + (sqrt_2/2*exp_z*cos_y**2 - sqrt_2/2*1j*exp_m*sin_y**2)*cos_x**2 - 2*1j*(sqrt_2/2*exp_z*sin_y*cos_y + sqrt_2/2*1j*exp_m*sin_y*cos_y)*sin_x*cos_x)
+    p_new = np.round(np.array([s_0, s_1, s_2, s_3]).reshape(1,4),5)
+    p_new = np.abs(p_new)**2
+    return (p_new)/(np.sum(p_new))
+
+def state_out_new(n, tipo):
+    if n==1:
+        a = {'1': 1}
+        return a
+    elif n == 2:
+        a0 = {'00': 1}
+        a1 = {'01': 1}
+        a2 = {'10': 1}
+        a3 = {'11': 1}
+        x = [a0, a1, a2, a3]
+        p_new = state_out_new_p(tipo[0], tipo[1], tipo[2])[0]
+        return np.random.choice(x, p = [p_new[0], p_new[1], p_new[2], p_new[3]])
+
 def juego(lista, tipo):
     m = len(lista)
     if m > 0:
@@ -102,9 +133,7 @@ def juego(lista, tipo):
             ganadores = []            
             for j in range(int(np.ceil(m/2))):
                 jug = 2 - int(m == j+int(np.ceil(m/2)))                        
-                circ = crear_circuito(jug, tipo)
-                backend = Aer.get_backend('qasm_simulator')
-                measurement = execute(circ, backend=backend, shots=1).result().get_counts(circ)
+                measurement = state_out_new(jug, tipo)
                 for k,i in enumerate(list(measurement.keys())[0]):
                     if i=='1':
                         ganadores.append(lista[2*j + k])                    
@@ -117,6 +146,35 @@ def checkear_nozero(check):
     backend = Aer.get_backend('qasm_simulator')
     measurement = execute(circ, backend=backend, shots=1000).result().get_counts(circ)
     return ['00'] != list(measurement.keys())
+
+def output_state(dx,dy,dz):
+    I_f = np.array([[1, 0],
+                [0, 1]]) 
+    I = np.array([[1, 0],
+                [0, 1]])
+    X_f = np.array([[0, 1],
+                [1, 0]]) 
+    X = np.array([[0, 1],
+                [1, 0]])    
+    for q in range(1):
+        I_f = np.kron(I_f, I)
+        X_f = np.kron(X_f, X)
+    J = Operator(1 / np.sqrt(2) * (I_f + 1j * X_f))    
+    J_dg = J.adjoint()
+    circ = QuantumCircuit(2,2)
+    circ.append(J, range(2))
+
+    for q in range(2):
+        circ.append(RXGate(dx),[q])
+        circ.append(RYGate(dy),[q])
+        circ.append(RZGate(dz),[q])    
+
+    circ.append(J_dg, range(2))
+    backend = Aer.get_backend('statevector_simulator')
+    job = backend.run(circ)
+    result = job.result()
+    outputstate = result.get_statevector(circ, decimals=5)
+    return outputstate
 
 def reward_qnet(rx, ry, rz):    
 
@@ -136,6 +194,7 @@ def reward_qnet(rx, ry, rz):
     dr = 0
 
     for p in range(n4):
+        print("Iteration {}/{}".format(p+1,n4))
         a = generar_mapa(n1, n3)                      # genero matriz
         net1, edge_weights_list = generar_red(a)      # genero red
         net2, edge_weights_list = generar_red(a)      # genero copia de red
@@ -185,9 +244,9 @@ def reward_qnet(rx, ry, rz):
 
 epsilon = 0.99              # randomness
 EPS_DECAY = 0.99           
-HM_EPISODES = 750
+HM_EPISODES = 100
 NET_STATES = 1              # 1 para red solo congestionada, 2 para red congestionada o no
-N_SIZE = 3
+N_SIZE = 4
 angulos = np.arange(0, 2 * np.pi, 2 * np.pi / np.power(2, N_SIZE))
 all_actions = [(rx,ry,rz) for rx in angulos for ry in angulos for rz in angulos] 
 start_q_table = None        # if we have a pickled Q table, we'll put the filename of it here.
@@ -202,9 +261,9 @@ else:
     with open(start_q_table, "rb") as f:
         q_table = pickle.load(f)
 
+episode_reward = []
 episode_rewards = []
 for episode in range(HM_EPISODES):
-    episode_reward = 0
  
     #obs = acá habría que cargar el estado pero por ahora es uno solo
     if np.random.random() > epsilon:
@@ -213,17 +272,23 @@ for episode in range(HM_EPISODES):
     else:
         action = random.choice(all_actions)
     reward = -reward_qnet(action[0], action[1], action[2])
+    episode_reward.append(reward)
+    episode_rewards.append(np.mean(episode_reward[-10:]))
     q_table[action] = [reward]
-    
-    episode_rewards.append(reward)
     epsilon *= EPS_DECAY      
     
-    print("Episode: {}. Reward: {}. Action: {}.".format(episode, reward, action))
+    print("---> Episode: {}. Reward: {}. Action: {}.".format(episode, reward, action))
 
 max_value = max(q_table.values())
 action = [k for k, v in q_table.items() if v == max_value][0]
+output = output_state(action[0], action[1], action[2])
 print("Best action: Rx = {}. Ry = {}. Rz = {}.".format(action[0], action[1], action[2]))    
-print("Total time = {} secods.".format(reward_qnet(action[0], action[1], action[2])))
+print("Total time = {} secods.".format(-q_table[action][0]))
+print("Quantum state output = {}".format(output))
+
+episode_rewards = np.negative(np.array(episode_rewards))
+plt.plot(episode_rewards)
+plt.show()
 
 with open(f"qtable-{int(time.time())}.pickle", "wb") as f:
-    pickle.dump(q_table, f)    
+    pickle.dump(q_table, f)
