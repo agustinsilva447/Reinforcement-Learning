@@ -244,9 +244,9 @@ def reward_qnet(rx, ry, rz):
 
 epsilon = 0.99              # randomness
 EPS_DECAY = 0.99           
-HM_EPISODES = 100
+HM_EPISODES = 500
 NET_STATES = 1              # 1 para red solo congestionada, 2 para red congestionada o no
-N_SIZE = 4
+N_SIZE = 3
 angulos = np.arange(0, 2 * np.pi, 2 * np.pi / np.power(2, N_SIZE))
 all_actions = [(rx,ry,rz) for rx in angulos for ry in angulos for rz in angulos] 
 start_q_table = None        # if we have a pickled Q table, we'll put the filename of it here.
@@ -277,17 +277,20 @@ for episode in range(HM_EPISODES):
     q_table[action] = [reward]
     epsilon *= EPS_DECAY      
     
-    print("---> Episode: {}. Reward: {}. Action: {}.".format(episode, reward, action))
+    print("---> Episode: {}. Epsilon: {}. Reward: {}. Action: {}.".format(np.round(episode,4), np.round(epsilon,4), np.round(reward,4), np.round(action,4)))
 
 max_value = max(q_table.values())
 action = [k for k, v in q_table.items() if v == max_value][0]
 output = output_state(action[0], action[1], action[2])
-print("Best action: Rx = {}. Ry = {}. Rz = {}.".format(action[0], action[1], action[2]))    
+print("\nBest action: Rx = {}. Ry = {}. Rz = {}.".format(action[0], action[1], action[2]))    
 print("Total time = {} secods.".format(-q_table[action][0]))
 print("Quantum state output = {}".format(output))
 
 episode_rewards = np.negative(np.array(episode_rewards))
+plt.title("Learning Rx, Ry and Rz for the congestion mitigation problem.".format())
 plt.plot(episode_rewards)
+plt.ylabel("Total Time")
+plt.xlabel("Episodes")
 plt.show()
 
 with open(f"qtable-{int(time.time())}.pickle", "wb") as f:
