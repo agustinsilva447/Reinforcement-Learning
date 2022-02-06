@@ -1,10 +1,11 @@
 import numpy as np                  # for array stuff and random
-import cv2                          # for showing our visual live
 import pickle                       # to save/load Q-Tables
 import time                         # using this to keep track of our saved Q-Tables.
 import matplotlib.pyplot as plt     # for graphing our mean rewards over time
-from PIL import Image               # for creating visual of our env
 from matplotlib import style        # to make pretty charts because it matters.
+
+import cv2                          # for showing our visual live
+from PIL import Image               # for creating visual of our env
 
 class Blob:
     def __init__(self):
@@ -75,7 +76,7 @@ d = {1: (255, 175, 0),      # blueish color
      3: (0, 0, 255)}        # red
 
 if start_q_table is None:
-    # initialize the q-table#
+    # initialize the q-table #
     q_table = {}
     for x1 in range(-SIZE+1, SIZE):
         for y1 in range(-SIZE+1, SIZE):
