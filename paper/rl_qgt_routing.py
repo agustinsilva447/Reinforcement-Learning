@@ -183,7 +183,7 @@ def reward_qnet(rx, ry, rz):
 
     n1 = 10                                                                                         # cantidad de ciudades
     n2 = 100                                                                                        # cantidad de paquetes
-    n3 = 10                                                                                         # distancia máxima
+    n3 = 13                                                                                         # distancia máxima
     p1 = [rx, ry, rz, 1]
 
     a = generar_mapa(n1, n3)                      # genero matriz
@@ -213,7 +213,7 @@ def reward_qnet(rx, ry, rz):
                 moves[ganadores[x]] = [-1,-2]
                 for y in caminitos[ganadores[x]]:
                     veces[np.where((np.array(all_edges2) == y).all(axis=1))[0][0]] += 1
-                    tiemp += 2 * net2[y[0]][y[1]]['weight'] * veces[np.where((np.array(all_edges2) == y).all(axis=1))[0][0]] - 1
+                    tiemp += (2 * veces[np.where((np.array(all_edges2) == y).all(axis=1))[0][0]] - 1) * net2[y[0]][y[1]]['weight']
                     net1.remove_edges_from([y])
                     net2[y[0]][y[1]]['color'] = colores[envio]
                 envio += 1
@@ -231,8 +231,9 @@ epsilon = 0.99
 EPS_DECAY = 0.999           
 HM_EPISODES = 5000
 SHOW_EVERY = 100
-STATS_EVERY = 100
+STATS_EVERY = 10
 N_SIZE = 4
+
 angulos = np.arange(0, 2 * np.pi, 2 * np.pi / np.power(2, N_SIZE))
 all_actions = [(rx,ry,rz) for rx in angulos for ry in angulos for rz in angulos] 
 start_q_table = None        # if we have a pickled Q table, we'll put the filename of it here.
