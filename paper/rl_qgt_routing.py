@@ -184,79 +184,67 @@ def reward_qnet(rx, ry, rz):
     n1 = 10                                                                                         # cantidad de ciudades
     n2 = 100                                                                                        # cantidad de paquetes
     n3 = 10                                                                                         # distancia máxima
-    n4 = 5                                                                                          # cantidad de iteraciones
     p1 = [rx, ry, rz, 1]
 
-    t = 0
+    a = generar_mapa(n1, n3)                      # genero matriz
+    net1, edge_weights_list = generar_red(a)      # genero red
+    net2, edge_weights_list = generar_red(a)      # genero copia de red
+    moves, colores = generar_paquetes(n1,n2)      # genero paquetes
+    caminitos, flag = caminos(net1, moves)        # caminos óptimos
+    all_edges2 = [e for e in net2.edges]
+    veces = np.zeros(len(all_edges2))
+
+    i = 0
     t1 = 0
-    t2 = 0
-    coste = 0
-    dr = 0
+    tiemp = 0
+    envio = 0
 
-    for p in range(n4):
-        print("Iteration {}/{}".format(p+1,n4))
-        a = generar_mapa(n1, n3)                      # genero matriz
-        net1, edge_weights_list = generar_red(a)      # genero red
-        net2, edge_weights_list = generar_red(a)      # genero copia de red
-        moves, colores = generar_paquetes(n1,n2)      # genero paquetes
-        caminitos, flag = caminos(net1, moves)        # caminos óptimos
-        all_edges2 = [e for e in net2.edges]
-        veces = np.zeros(len(all_edges2))
-        i = 0
-        tiemp = 0
-        envio = 0
-        while not flag:
-            t += 1 
-            t1 += 1
-            all_edges = [e for e in net1.edges]
-            paquetes_ruta = paquetes_en_ruta(caminitos, all_edges[i], n2)
-            if paquetes_ruta == []:
-                t1 -= 1  
-                t2 += 1  
-                i += 1
-            else:
-                i = 0
-                ganadores = juego(paquetes_ruta, p1)
-                for x in range(len(ganadores)):
-                    moves[ganadores[x]] = [-1,-2]
-                    for y in caminitos[ganadores[x]]:
-                        veces[np.where((np.array(all_edges2) == y).all(axis=1))[0][0]] += 1
-                        tiemp += 2 * net2[y[0]][y[1]]['weight'] * veces[np.where((np.array(all_edges2) == y).all(axis=1))[0][0]] - 1
-                        net1.remove_edges_from([y])
-                        net2[y[0]][y[1]]['color'] = colores[envio]
-                    envio += 1
-                caminitos, flag = caminos(net1, moves)
-        try:
-            temp = tiemp/envio    #tiempo de envío por paquete 
-        except ZeroDivisionError:
-            temp = 2*n3            
-        coste += temp   
-        dr += (envio)/(n2)
-    dr = (dr)/(n4)
-    t = t / n4
-    t1 = t1 / n4             # routing time
-    t2 = t2 / n4
-    coste = coste / n4       #traveling time    
+    while not flag:
+        t1 += 1
+        all_edges = [e for e in net1.edges]
+        paquetes_ruta = paquetes_en_ruta(caminitos, all_edges[i], n2)
+        if paquetes_ruta == []:
+            t1 -= 1  
+            i += 1
+        else:
+            i = 0
+            ganadores = juego(paquetes_ruta, p1)
+            for x in range(len(ganadores)):
+                moves[ganadores[x]] = [-1,-2]
+                for y in caminitos[ganadores[x]]:
+                    veces[np.where((np.array(all_edges2) == y).all(axis=1))[0][0]] += 1
+                    tiemp += 2 * net2[y[0]][y[1]]['weight'] * veces[np.where((np.array(all_edges2) == y).all(axis=1))[0][0]] - 1
+                    net1.remove_edges_from([y])
+                    net2[y[0]][y[1]]['color'] = colores[envio]
+                envio += 1
+            caminitos, flag = caminos(net1, moves)
+    try:
+        temp = tiemp/envio    #tiempo de envío por paquete 
+    except ZeroDivisionError:
+        temp = 2*n3    
 
-    return (t1 + coste)
+    return (t1 + temp)
 
 ##################################################
 
-epsilon = 0.99              # randomness
-EPS_DECAY = 0.99           
-HM_EPISODES = 500
-NET_STATES = 1              # 1 para red solo congestionada, 2 para red congestionada o no
-N_SIZE = 3
+epsilon = 0.99              
+EPS_DECAY = 0.999           
+HM_EPISODES = 5000
+SHOW_EVERY = 100
+STATS_EVERY = 100
+N_SIZE = 4
 angulos = np.arange(0, 2 * np.pi, 2 * np.pi / np.power(2, N_SIZE))
 all_actions = [(rx,ry,rz) for rx in angulos for ry in angulos for rz in angulos] 
 start_q_table = None        # if we have a pickled Q table, we'll put the filename of it here.
 
 if start_q_table is None:
     q_table = {}
+    n_actions = {}
     for rx in angulos:
         for ry in angulos:
             for rz in angulos:
-                q_table[(rx,ry,rz)] = [-np.random.uniform(100, 200) for i in range(NET_STATES)]     
+                q_table[(rx,ry,rz)] = -np.random.uniform(100, 200)    
+                n_actions[(rx,ry,rz)] = 0     
 else:
     with open(start_q_table, "rb") as f:
         q_table = pickle.load(f)
@@ -264,33 +252,45 @@ else:
 episode_reward = []
 episode_rewards = []
 for episode in range(HM_EPISODES):
- 
-    #obs = acá habría que cargar el estado pero por ahora es uno solo
+    
     if np.random.random() > epsilon:
         max_value = max(q_table.values())
         action = [k for k, v in q_table.items() if v == max_value][0]
     else:
         action = random.choice(all_actions)
+
     reward = -reward_qnet(action[0], action[1], action[2])
     episode_reward.append(reward)
-    episode_rewards.append(np.mean(episode_reward[-10:]))
-    q_table[action] = [reward]
-    epsilon *= EPS_DECAY      
+    episode_rewards.append(np.mean(episode_reward[-STATS_EVERY:]))
+
+    n_actions[action] += 1
+    if n_actions[action] == 1:
+        q_table[action] = reward
+    else:
+        q_table[action] = q_table[action] + (1/n_actions[action]) * (reward - q_table[action])   
     
-    print("---> Episode: {}. Epsilon: {}. Reward: {}. Action: {}.".format(np.round(episode,4), np.round(epsilon,4), np.round(reward,4), np.round(action,4)))
+    epsilon *= EPS_DECAY   
+    if episode % SHOW_EVERY == 0:
+        print("---> Episode: {}. Epsilon: {:.4f}. Q-table: {:.4f}. Reward: {:.4f}. Action: {}.".format(np.round(episode,4), np.round(epsilon,4), np.round(q_table[action], 4), np.round(reward,4), np.round(action,4)))
 
 max_value = max(q_table.values())
 action = [k for k, v in q_table.items() if v == max_value][0]
 output = output_state(action[0], action[1], action[2])
 print("\nBest action: Rx = {}. Ry = {}. Rz = {}.".format(action[0], action[1], action[2]))    
-print("Total time = {} secods.".format(-q_table[action][0]))
+print("Total time = {} secods.".format(-q_table[action]))
 print("Quantum state output = {}".format(output))
 
+episode_reward = np.negative(np.array(episode_reward))
 episode_rewards = np.negative(np.array(episode_rewards))
-plt.title("Learning Rx, Ry and Rz for the congestion mitigation problem.".format())
-plt.plot(episode_rewards)
-plt.ylabel("Total Time")
-plt.xlabel("Episodes")
+
+fig, axs = plt.subplots(2, 1) #,figsize=(30,20))
+axs[0].set_title("Learning Rx, Ry and Rz for the congestion mitigation problem.")
+axs[0].plot(episode_reward)
+axs[0].set_ylabel("Total Time")
+axs[1].set_title("Learning Rx, Ry and Rz for the congestion mitigation problem [average].")
+axs[1].plot(episode_rewards)
+axs[1].set_ylabel("Total Time")
+axs[1].set_xlabel("Episodes")
 plt.show()
 
 with open(f"qtable-{int(time.time())}.pickle", "wb") as f:
