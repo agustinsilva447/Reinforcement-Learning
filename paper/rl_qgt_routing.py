@@ -96,7 +96,7 @@ def crear_circuito(n, tipo):
     return circ
 
 def state_out_new_p(x,y,z):
-
+    # all these were calculated with sympy in order to speed computing time
     sqrt_2 = np.sqrt(2)
     cos_x = np.cos(x/2)
     sin_x = np.sin(x/2)
@@ -226,6 +226,13 @@ def reward_qnet(rx, ry, rz):
     return (t1 + temp)
 
 ##################################################
+
+"""epsilon = 0.99
+EPS_DECAY = 0.99
+HM_EPISODES = 500
+SHOW_EVERY = 10
+STATS_EVERY = 5
+N_SIZE = 3"""
 
 epsilon = 0.99
 EPS_DECAY = 0.999
