@@ -227,11 +227,11 @@ def reward_qnet(rx, ry, rz):
 
 ##################################################
 
-epsilon = 0.99              
-EPS_DECAY = 0.999           
+epsilon = 0.99
+EPS_DECAY = 0.999
 HM_EPISODES = 5000
 SHOW_EVERY = 100
-STATS_EVERY = 10
+STATS_EVERY = 50
 N_SIZE = 4
 
 angulos = np.arange(0, 2 * np.pi, 2 * np.pi / np.power(2, N_SIZE))
