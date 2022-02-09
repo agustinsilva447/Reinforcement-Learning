@@ -1,3 +1,4 @@
+from cProfile import label
 import copy
 import time
 import pickle                      
@@ -227,14 +228,17 @@ def reward_qnet(rx, ry, rz, n3_0):
 
 ##################################################
 
-epsilon =   [[0.99, 0.991, '1/n'],  # epsilon variable y alfa variable
-             [0.1, 1, 0.1]]         # epsilon constante y alfa constante
-HM_EPISODES = 512 + 256 + 1
+epsilon =   [[0.99, 0.991, '1/n'],      # epsilon variable y alfa variable
+             [0.1 , 1    , '1/n'],      # epsilon constante y alfa variable
+             [0.1 , 1    , 0.1],        # epsilon constante y alfa constante
+             [0.99 , 0.991    , 0.1]]   # epsilon variable y alfa constante
+
+HM_EPISODES = 512 + 513
 SHOW_EVERY = 16
 N_SIZE = 3
 
 """epsilon = [[0.99, 0.9988, '1/n'], [0.9, 1, 0.1]]
-HM_EPISODES = 4092 + 2048 + 1
+HM_EPISODES = 4092 + 2049
 SHOW_EVERY = 128
 N_SIZE = 4"""
 
@@ -245,8 +249,8 @@ start_q_table = None        # if we have a pickled Q table, we'll put the filena
 final_t = []
 final_m = []
 
-for it in range(2):
-    print("\nITERATION: {}.".format(it+1))
+for it in range(len(epsilon)):
+    print("ITERATION: {}.".format(it+1))
     if start_q_table is None:
         q_table = {}
         n_actions = {}
@@ -269,7 +273,7 @@ for it in range(2):
         else:
             action = random.choice(all_actions)
 
-        if episode < (HM_EPISODES*2/3):
+        if episode < (HM_EPISODES*0.5):
             n3_0 = 0
         else:
             n3_0 = 1
@@ -293,7 +297,7 @@ for it in range(2):
     output = output_state(action[0], action[1], action[2])
     print("\nBest action: Rx = {}. Ry = {}. Rz = {}.".format(action[0], action[1], action[2]))    
     print("Total time = {} secods.".format(-q_table[action]))
-    print("Quantum state output = {}".format(output))
+    print("Quantum state output = {}.\n".format(output))
 
     episode_reward = np.negative(np.array(episode_reward))
     episode_rewards = np.negative(np.array(episode_rewards))
@@ -302,14 +306,20 @@ for it in range(2):
 
 fig, axs = plt.subplots(2, 1) #,figsize=(30,20))
 axs[0].set_title("Learning Rx, Ry and Rz for the congestion mitigation problem.")
-axs[0].plot(final_t[0])
-axs[0].plot(final_t[1])
+axs[0].plot(final_t[0], label = "epsilon variable y alfa variable")
+axs[0].plot(final_t[1], label = "epsilon constante y alfa variable")
+axs[0].plot(final_t[2], label = "epsilon constante y alfa constante")
+axs[0].plot(final_t[3], label = "epsilon variable y alfa constante")
 axs[0].set_ylabel("Total Time")
+axs[0].legend(loc='upper right')
 axs[1].set_title("Learning Rx, Ry and Rz for the congestion mitigation problem [average].")
-axs[1].plot(final_m[0])
-axs[1].plot(final_m[1])
+axs[1].plot(final_m[0], label = "epsilon variable y alfa variable")
+axs[1].plot(final_m[1], label = "epsilon constante y alfa variable")
+axs[1].plot(final_m[2], label = "epsilon constante y alfa constante")
+axs[1].plot(final_m[3], label = "epsilon variable y alfa constante")
 axs[1].set_ylabel("Total Time")
 axs[1].set_xlabel("Episodes")
+axs[1].legend(loc='upper right')
 plt.show()
 
 """with open(f"qtable-{int(time.time())}.pickle", "wb") as f:
