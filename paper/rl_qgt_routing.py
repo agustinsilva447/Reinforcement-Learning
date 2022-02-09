@@ -14,7 +14,7 @@ from qiskit.extensions import RXGate, RYGate, RZGate
 def generar_mapa(n1, n3):
     a = 0
     while (np.linalg.matrix_rank(a)!=n1):
-        a = np.random.randint(n3, size=(n1,n1))
+        a = n3 * np.random.rand(n1,n1)
         np.fill_diagonal(a,0)
         a = np.tril(a) + np.tril(a, -1).T
     return a
@@ -176,17 +176,17 @@ def output_state(dx,dy,dz):
     outputstate = result.get_statevector(circ, decimals=5)
     return outputstate
 
-def reward_qnet(rx, ry, rz):    
+def reward_qnet(rx, ry, rz, n3_0):    
 
     if checkear_nozero([rx,ry,rz,1]) == 0:
         return 200
 
     n1 = 10                                                                                         # cantidad de ciudades
     n2 = 100                                                                                        # cantidad de paquetes
-    n3 = 13                                                                                         # distancia máxima
+    n3 = [14, 0.5]                                                                                         # distancia máxima
     p1 = [rx, ry, rz, 1]
 
-    a = generar_mapa(n1, n3)                      # genero matriz
+    a = generar_mapa(n1, n3[n3_0])                      # genero matriz
     net1, edge_weights_list = generar_red(a)      # genero red
     net2, edge_weights_list = generar_red(a)      # genero copia de red
     moves, colores = generar_paquetes(n1,n2)      # genero paquetes
@@ -221,85 +221,96 @@ def reward_qnet(rx, ry, rz):
     try:
         temp = tiemp/envio    #tiempo de envío por paquete 
     except ZeroDivisionError:
-        temp = 2*n3    
+        temp = 2*n3[n3_0]    
 
     return (t1 + temp)
 
 ##################################################
 
-"""epsilon = 0.99
-EPS_DECAY = 0.99
-HM_EPISODES = 500
-SHOW_EVERY = 10
-STATS_EVERY = 5
-N_SIZE = 3"""
+epsilon =   [[0.99, 0.991, '1/n'],  # epsilon variable y alfa variable
+             [0.1, 1, 0.1]]         # epsilon constante y alfa constante
+HM_EPISODES = 512 + 256 + 1
+SHOW_EVERY = 16
+N_SIZE = 3
 
-epsilon = 0.99
-EPS_DECAY = 0.999
-HM_EPISODES = 5000
-SHOW_EVERY = 100
-STATS_EVERY = 50
-N_SIZE = 4
+"""epsilon = [[0.99, 0.9988, '1/n'], [0.9, 1, 0.1]]
+HM_EPISODES = 4092 + 2048 + 1
+SHOW_EVERY = 128
+N_SIZE = 4"""
 
 angulos = np.arange(0, 2 * np.pi, 2 * np.pi / np.power(2, N_SIZE))
 all_actions = [(rx,ry,rz) for rx in angulos for ry in angulos for rz in angulos] 
 start_q_table = None        # if we have a pickled Q table, we'll put the filename of it here.
 
-if start_q_table is None:
-    q_table = {}
-    n_actions = {}
-    for rx in angulos:
-        for ry in angulos:
-            for rz in angulos:
-                q_table[(rx,ry,rz)] = -np.random.uniform(100, 200)    
-                n_actions[(rx,ry,rz)] = 0     
-else:
-    with open(start_q_table, "rb") as f:
-        q_table = pickle.load(f)
+final_t = []
+final_m = []
 
-episode_reward = []
-episode_rewards = []
-for episode in range(HM_EPISODES):
-    
-    if np.random.random() > epsilon:
-        max_value = max(q_table.values())
-        action = [k for k, v in q_table.items() if v == max_value][0]
+for it in range(2):
+    print("\nITERATION: {}.".format(it+1))
+    if start_q_table is None:
+        q_table = {}
+        n_actions = {}
+        for rx in angulos:
+            for ry in angulos:
+                for rz in angulos:
+                    q_table[(rx,ry,rz)] = -np.random.uniform(100, 200)    
+                    n_actions[(rx,ry,rz)] = 0     
     else:
-        action = random.choice(all_actions)
+        with open(start_q_table, "rb") as f:
+            q_table = pickle.load(f)
 
-    reward = -reward_qnet(action[0], action[1], action[2])
-    episode_reward.append(reward)
-    episode_rewards.append(np.mean(episode_reward[-STATS_EVERY:]))
+    episode_reward = []
+    episode_rewards = []
+    for episode in range(HM_EPISODES):
+        
+        if np.random.random() > epsilon[it][0]:
+            max_value = max(q_table.values())
+            action = [k for k, v in q_table.items() if v == max_value][0]
+        else:
+            action = random.choice(all_actions)
 
-    n_actions[action] += 1
-    if n_actions[action] == 1:
-        q_table[action] = reward
-    else:
-        q_table[action] = q_table[action] + (1/n_actions[action]) * (reward - q_table[action])   
-    
-    epsilon *= EPS_DECAY   
-    if episode % SHOW_EVERY == 0:
-        print("---> Episode: {}. Epsilon: {:.4f}. Q-table: {:.4f}. Reward: {:.4f}. Action: {}.".format(np.round(episode,4), np.round(epsilon,4), np.round(q_table[action], 4), np.round(reward,4), np.round(action,4)))
+        if episode < (HM_EPISODES*2/3):
+            n3_0 = 0
+        else:
+            n3_0 = 1
+        reward = -reward_qnet(action[0], action[1], action[2], n3_0)
+        episode_reward.append(reward)
+        episode_rewards.append(np.mean(episode_reward))
 
-max_value = max(q_table.values())
-action = [k for k, v in q_table.items() if v == max_value][0]
-output = output_state(action[0], action[1], action[2])
-print("\nBest action: Rx = {}. Ry = {}. Rz = {}.".format(action[0], action[1], action[2]))    
-print("Total time = {} secods.".format(-q_table[action]))
-print("Quantum state output = {}".format(output))
+        n_actions[action] += 1
+        if epsilon[it][2] == '1/n':
+            alfa = (1/n_actions[action])
+        else:
+            alfa = epsilon[it][2]
+        q_table[action] = q_table[action] + alfa * (reward - q_table[action])       
+        epsilon[it][0] *= epsilon[it][1]       
 
-episode_reward = np.negative(np.array(episode_reward))
-episode_rewards = np.negative(np.array(episode_rewards))
+        if episode % SHOW_EVERY == 0:
+            print("---> Episode: {}. Epsilon: {:.4f}. Q-table: {:.4f}. Reward: {:.4f}. Action: {}.".format(np.round(episode,4), np.round(epsilon[it][0],4), np.round(q_table[action], 4), np.round(reward,4), np.round(action,4)))
+
+    max_value = max(q_table.values())
+    action = [k for k, v in q_table.items() if v == max_value][0]
+    output = output_state(action[0], action[1], action[2])
+    print("\nBest action: Rx = {}. Ry = {}. Rz = {}.".format(action[0], action[1], action[2]))    
+    print("Total time = {} secods.".format(-q_table[action]))
+    print("Quantum state output = {}".format(output))
+
+    episode_reward = np.negative(np.array(episode_reward))
+    episode_rewards = np.negative(np.array(episode_rewards))
+    final_t.append(episode_reward)
+    final_m.append(episode_rewards)
 
 fig, axs = plt.subplots(2, 1) #,figsize=(30,20))
 axs[0].set_title("Learning Rx, Ry and Rz for the congestion mitigation problem.")
-axs[0].plot(episode_reward)
+axs[0].plot(final_t[0])
+axs[0].plot(final_t[1])
 axs[0].set_ylabel("Total Time")
 axs[1].set_title("Learning Rx, Ry and Rz for the congestion mitigation problem [average].")
-axs[1].plot(episode_rewards)
+axs[1].plot(final_m[0])
+axs[1].plot(final_m[1])
 axs[1].set_ylabel("Total Time")
 axs[1].set_xlabel("Episodes")
 plt.show()
 
-with open(f"qtable-{int(time.time())}.pickle", "wb") as f:
-    pickle.dump(q_table, f)
+"""with open(f"qtable-{int(time.time())}.pickle", "wb") as f:
+    pickle.dump(q_table, f)"""
