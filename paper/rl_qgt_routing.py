@@ -220,7 +220,7 @@ def reward_qnet(rx, ry, rz, n3):
     try:
         temp = tiemp/envio    #tiempo de envío por paquete 
     except ZeroDivisionError:
-        temp = 2*n3[n3_0]    
+        temp = 2*n3    
 
     return (t1 + temp)
 
@@ -231,18 +231,19 @@ epsilon =   [[0.99, 0.991, '1/n'],   # epsilon variable y alfa variable
              [0.1 , 1 , 0.1],        # epsilon constante y alfa constante
              [0.99 , 0.991 , 0.1]]   # epsilon variable y alfa constante
 
-n3 = [0.14, 14]                      # distancias máximas
-STATS = [0, 512]
-
-HM_EPISODES = 2 * 512 + 1
+HM_EPISODES = 2 * 64 + 1
 SHOW_EVERY = 16
 N_SIZE = 3
+n3 = [[0.14, 14],                    # distancias máximas
+      [0, 64, HM_EPISODES]]
 
-"""epsilon = [[0.99, 0.9988, '1/n'], [0.9, 1, 0.1]]
+"""
 HM_EPISODES = 2 * 4092 + 1
-STATS = 4092
 SHOW_EVERY = 128
-N_SIZE = 4"""
+N_SIZE = 4
+n3 = [[0.14, 14],                    # distancias máximas
+      [0, 4092, HM_EPISODES]]
+"""
 
 angulos = np.arange(0, 2 * np.pi, 2 * np.pi / np.power(2, N_SIZE))
 all_actions = [(rx,ry,rz) for rx in angulos for ry in angulos for rz in angulos] 
@@ -265,6 +266,7 @@ for it in range(len(epsilon)):
         with open(start_q_table, "rb") as f:
             q_table = pickle.load(f)
 
+    type = 0
     episode_reward = []
     episode_rewards = []
     for episode in range(HM_EPISODES):
@@ -275,14 +277,12 @@ for it in range(len(epsilon)):
         else:
             action = random.choice(all_actions)
 
-        if episode < (STATS[1]):
-            type = 0
-        else:
-            type = 1
+        if episode > (n3[1][type + 1]):
+            type += 1
 
-        reward = -reward_qnet(action[0], action[1], action[2], n3[type])
+        reward = -reward_qnet(action[0], action[1], action[2], n3[0][type])
         episode_reward.append(reward)
-        episode_rewards.append(np.mean(episode_reward[STATS[type]::]))
+        episode_rewards.append(np.mean(episode_reward[n3[1][type]::]))
 
         n_actions[action] += 1
         if epsilon[it][2] == '1/n':
