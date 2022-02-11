@@ -1,4 +1,3 @@
-from cProfile import label
 import copy
 import time
 import pickle                      
@@ -177,17 +176,16 @@ def output_state(dx,dy,dz):
     outputstate = result.get_statevector(circ, decimals=5)
     return outputstate
 
-def reward_qnet(rx, ry, rz, n3_0):    
+def reward_qnet(rx, ry, rz, n3):    
 
     if checkear_nozero([rx,ry,rz,1]) == 0:
         return 200
 
     n1 = 10                                                                                         # cantidad de ciudades
     n2 = 100                                                                                        # cantidad de paquetes
-    n3 = [14, 0.5]                                                                                         # distancia máxima
     p1 = [rx, ry, rz, 1]
 
-    a = generar_mapa(n1, n3[n3_0])                      # genero matriz
+    a = generar_mapa(n1, n3)                      # genero matriz
     net1, edge_weights_list = generar_red(a)      # genero red
     net2, edge_weights_list = generar_red(a)      # genero copia de red
     moves, colores = generar_paquetes(n1,n2)      # genero paquetes
@@ -228,17 +226,21 @@ def reward_qnet(rx, ry, rz, n3_0):
 
 ##################################################
 
-epsilon =   [[0.99, 0.991, '1/n'],      # epsilon variable y alfa variable
-             [0.1 , 1    , '1/n'],      # epsilon constante y alfa variable
-             [0.1 , 1    , 0.1],        # epsilon constante y alfa constante
-             [0.99 , 0.991    , 0.1]]   # epsilon variable y alfa constante
+epsilon =   [[0.99, 0.991, '1/n'],   # epsilon variable y alfa variable
+             [0.1 , 1 , '1/n'],      # epsilon constante y alfa variable
+             [0.1 , 1 , 0.1],        # epsilon constante y alfa constante
+             [0.99 , 0.991 , 0.1]]   # epsilon variable y alfa constante
 
-HM_EPISODES = 512 + 513
+n3 = [0.14, 14]                      # distancias máximas
+STATS = [0, 512]
+
+HM_EPISODES = 2 * 512 + 1
 SHOW_EVERY = 16
 N_SIZE = 3
 
 """epsilon = [[0.99, 0.9988, '1/n'], [0.9, 1, 0.1]]
-HM_EPISODES = 4092 + 2049
+HM_EPISODES = 2 * 4092 + 1
+STATS = 4092
 SHOW_EVERY = 128
 N_SIZE = 4"""
 
@@ -273,13 +275,14 @@ for it in range(len(epsilon)):
         else:
             action = random.choice(all_actions)
 
-        if episode < (HM_EPISODES*0.5):
-            n3_0 = 0
+        if episode < (STATS[1]):
+            type = 0
         else:
-            n3_0 = 1
-        reward = -reward_qnet(action[0], action[1], action[2], n3_0)
+            type = 1
+
+        reward = -reward_qnet(action[0], action[1], action[2], n3[type])
         episode_reward.append(reward)
-        episode_rewards.append(np.mean(episode_reward))
+        episode_rewards.append(np.mean(episode_reward[STATS[type]::]))
 
         n_actions[action] += 1
         if epsilon[it][2] == '1/n':
