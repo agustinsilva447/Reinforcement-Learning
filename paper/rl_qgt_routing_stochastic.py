@@ -1,4 +1,5 @@
 import copy
+from email import policy
 import time
 import pickle                      
 import random
@@ -10,7 +11,7 @@ from qiskit import QuantumCircuit, Aer, execute
 from qiskit.quantum_info import Operator
 from qiskit.extensions import RXGate, RYGate, RZGate          
 
-################################################## Quantum Game
+##################################################
 def generar_mapa(n1, n3):
     a = 0
     while (np.linalg.matrix_rank(a)!=n1):
@@ -181,8 +182,8 @@ def reward_qnet(rx, ry, rz, n3):
     if checkear_nozero([rx,ry,rz,1]) == 0:
         return 200
 
-    n1 = 10                                       # cantidad de ciudades
-    n2 = 100                                      # cantidad de paquetes
+    n1 = 10                                                                                         # cantidad de ciudades
+    n2 = 100                                                                                        # cantidad de paquetes
     p1 = [rx, ry, rz, 1]
 
     a = generar_mapa(n1, n3)                      # genero matriz
@@ -224,13 +225,13 @@ def reward_qnet(rx, ry, rz, n3):
 
     return (t1 + temp)
 
-################################################## Network settings
+##################################################
 
 HM_EPISODES = 2 * 512 + 1
 SHOW_EVERY = 16
 N_SIZE = 3
-n3 = [[14, 0.14],                    # distancias máximas
-      [0, 512, HM_EPISODES]]
+n3 = [[14,      0.14],                    # distancias máximas
+      [0,       512,     HM_EPISODES]]
 
 """
 HM_EPISODES = 2 * 4092 + 1
@@ -243,74 +244,9 @@ n3 = [[0.14, 14],                    # distancias máximas
 final_t = []
 final_m = []
 angulos = np.arange(0, 2 * np.pi, 2 * np.pi / np.power(2, N_SIZE))
-all_actions = [(rx,ry,rz) for rx in angulos for ry in angulos for rz in angulos] 
-
-################################################## Epsilon and Alfa
-
-start_q_table = None        # if we have a pickled Q table, we'll put the filename of it here.
-epsilon =   [[0.99, 0.991, '1/n'],   # epsilon variable y alfa variable
-             [0.1 , 1 , '1/n'],      # epsilon constante y alfa variable
-             [0.1 , 1 , 0.1],        # epsilon constante y alfa constante
-             [0.99 , 0.991 , 0.1]]   # epsilon variable y alfa constante
-
-for it in range(len(epsilon)):
-    print("ITERATION: {}.".format(it+1))
-    if start_q_table is None:
-        q_table = {}
-        n_actions = {}
-        for rx in angulos:
-            for ry in angulos:
-                for rz in angulos:
-                    q_table[(rx,ry,rz)] = -np.random.uniform(100, 200)    
-                    n_actions[(rx,ry,rz)] = 0     
-    else:
-        with open(start_q_table, "rb") as f:
-            q_table = pickle.load(f)
-
-    type = 0
-    episode_reward = []
-    episode_rewards = []
-    for episode in range(HM_EPISODES):
-        
-        if np.random.random() > epsilon[it][0]:
-            max_value = max(q_table.values())
-            action = [k for k, v in q_table.items() if v == max_value][0]
-        else:
-            action = random.choice(all_actions)
-
-        if episode > (n3[1][type + 1]):
-            type += 1
-
-        reward = -reward_qnet(action[0], action[1], action[2], n3[0][type])
-        episode_reward.append(reward)
-        episode_rewards.append(np.mean(episode_reward[n3[1][type]::]))
-
-        n_actions[action] += 1
-        if epsilon[it][2] == '1/n':
-            alfa = (1/n_actions[action])
-        else:
-            alfa = epsilon[it][2]
-        q_table[action] = q_table[action] + alfa * (reward - q_table[action])       
-        epsilon[it][0] *= epsilon[it][1]       
-
-        if episode % SHOW_EVERY == 0:
-            print("---> Episode: {}. Epsilon: {:.4f}. Q-table: {:.4f}. Reward: {:.4f}. Action: {}.".format(np.round(episode,4), np.round(epsilon[it][0],4), np.round(q_table[action], 4), np.round(reward,4), np.round(action,4)))            
-
-    max_value = max(q_table.values())
-    action = [k for k, v in q_table.items() if v == max_value][0]
-    output = output_state(action[0], action[1], action[2])
-    print("\nBest action: Rx = {}. Ry = {}. Rz = {}.".format(action[0], action[1], action[2]))    
-    print("Total time = {} secods.".format(-q_table[action]))
-    print("Quantum state output = {}.\n".format(output))
-
-    episode_reward = np.negative(np.array(episode_reward))
-    episode_rewards = np.negative(np.array(episode_rewards))
-    final_t.append(episode_reward)
-    final_m.append(episode_rewards)
-
-################################################## Stochastic Gradient Ascent
 
 alfa = 0.1
+all_actions = [(rx,ry,rz) for rx in angulos for ry in angulos for rz in angulos] 
 start_h_table = None        # if we have a pickled Q table, we'll put the filename of it here.
 
 if start_h_table is None:
@@ -375,27 +311,17 @@ episode_rewards = np.negative(np.array(episode_rewards))
 final_t.append(episode_reward)
 final_m.append(episode_rewards)
 
-################################################## Algorithms Comparison
-
 fig, axs = plt.subplots(2, 1) #,figsize=(30,20))
 axs[0].set_title("Learning Rx, Ry and Rz for the congestion mitigation problem.")
-axs[0].plot(final_t[0], label = "Epsilon variable y Alfa variable")
-axs[0].plot(final_t[1], label = "Epsilon constante y Alfa variable")
-axs[0].plot(final_t[2], label = "Epsilon constante y Alfa constante")
-axs[0].plot(final_t[3], label = "Epsilon variable y Alfa constante")
-axs[0].plot(final_t[3], label = "Stochastic Gradient Ascent")
+axs[0].plot(final_t[0], label = "Stochastic Gradient Ascent")
 axs[0].set_ylabel("Total Time")
 axs[0].legend(loc='upper right')
 axs[1].set_title("Learning Rx, Ry and Rz for the congestion mitigation problem [average].")
-axs[1].plot(final_m[0], label = "Epsilon variable y Alfa variable")
-axs[1].plot(final_m[1], label = "Epsilon constante y Alfa variable")
-axs[1].plot(final_m[2], label = "Epsilon constante y Alfa constante")
-axs[1].plot(final_m[3], label = "Epsilon variable y Alfa constante")
-axs[1].plot(final_m[3], label = "Stochastic Gradient Ascent")
+axs[1].plot(final_m[0], label = "Stochastic Gradient Ascent")
 axs[1].set_ylabel("Total Time")
 axs[1].set_xlabel("Episodes")
 axs[1].legend(loc='upper right')
 plt.show()
 
-"""with open(f"qtable-{int(time.time())}.pickle", "wb") as f:
+"""with open(f"htable-{int(time.time())}.pickle", "wb") as f:
     pickle.dump(q_table, f)"""
