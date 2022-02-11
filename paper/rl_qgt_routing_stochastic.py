@@ -244,9 +244,9 @@ n3 = [[0.14, 14],                    # distancias máximas
 final_t = []
 final_m = []
 angulos = np.arange(0, 2 * np.pi, 2 * np.pi / np.power(2, N_SIZE))
+all_actions = [(rx,ry,rz) for rx in angulos for ry in angulos for rz in angulos] 
 
 alfa = 0.1
-all_actions = [(rx,ry,rz) for rx in angulos for ry in angulos for rz in angulos] 
 start_h_table = None        # if we have a pickled Q table, we'll put the filename of it here.
 
 if start_h_table is None:
