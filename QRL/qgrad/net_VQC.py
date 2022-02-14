@@ -20,22 +20,17 @@ def rz(phi):
                      [0, jnp.exp(1j * phi / 2)]])            
 
 def J():
-    I_f = jnp.array([[1, 0],
-                [0, 1]]) 
     I = jnp.array([[1, 0],
                 [0, 1]])
-    X_f = jnp.array([[0, 1],
-                [1, 0]]) 
     X = jnp.array([[0, 1],
                 [1, 0]])    
-    I_f = jnp.kron(I_f, I)
-    X_f = jnp.kron(X_f, X)
-
-    J = jnp.array(1 / jnp.sqrt(2) * (I_f + 1j * X_f))    
+    I_f = jnp.kron(I, I)
+    X_f = jnp.kron(X, X)
+    J = jnp.array((1 / jnp.sqrt(2)) * (I_f + 1j * X_f))    
     return J
 
 def J_dag():
-    J_dag = jnp.conjugate(J()).transpose()
+    J_dag = jnp.transpose(jnp.conjugate(J()))
     return J_dag
                          
 def circuit(params):
@@ -46,7 +41,7 @@ def circuit(params):
     layer3 = jnp.kron(ry(thetay), ry(thetay))
     layer4 = jnp.kron(rz(thetaz), rz(thetaz))
     layer5 = J_dag()
-    layers = [layer1, layer2, layer3, layer4, layer5]
+    layers = [layer5, layer4, layer3, layer2, layer1]
     unitary = reduce(lambda  x, y : jnp.dot(x, y), layers)
     return jnp.dot(unitary, layer0)  
 
@@ -77,7 +72,10 @@ for epoch in range(epochs):
     if (epoch % 50 == 49):
         print("Epoch: {:2f} | Loss: {:3f}".format(*jnp.asarray(progress)))
 
-print("\nBest action: Rx = {}. Ry = {}. Rz = {}.".format(params[0], params[1], params[2]))   
+print("\nBest action: [Rx, Ry, Rz] = [{}, {}, {}]".format(params[0], params[1], params[2]))   
+d = np.round((np.array(params))/(np.pi),2)
+print("Best action: [Rx, Ry, Rz] = [{}*π, {}*π, {}*π]\n".format(d[0], d[1], d[2])) 
+
 output = circuit(params)
 print("Quantum state output = {}.\n".format(np.round(output,3)))    
 
