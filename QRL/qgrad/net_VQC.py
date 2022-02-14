@@ -1,10 +1,11 @@
+import numpy as np
 import jax.numpy as jnp
 from jax.example_libraries import optimizers
 from jax import grad
 
 import matplotlib.pyplot as plt
 from functools import reduce
-from qgrad.qgrad_qutip import basis, expect
+from qgrad.qgrad_qutip import basis, fidelity
 
 def rx(phi):
     return jnp.array([[jnp.cos(phi / 2), -1j * jnp.sin(phi / 2)],
@@ -50,15 +51,12 @@ def circuit(params):
     return jnp.dot(unitary, layer0)  
 
 def cost(params):
-    op = jnp.array([[0, 0,   0,   0],
-                    [0, 0.5, 0.5, 0],
-                    [0, 0.5, 0.5, 0],
-                    [0, 0,   0,   0]])
     state = circuit(params)
-    return -jnp.real(expect(op, state))
+    op_qs = jnp.array([[0], [0.707],   [0.707],   [0]])
+    return -jnp.real(fidelity(op_qs,state))[0][0]
 
 # fixed random parameter initialization
-init_params = [jnp.pi/8, jnp.pi/8, jnp.pi/8]
+init_params = [2 * jnp.pi * np.random.rand(), 2 * jnp.pi * np.random.rand(), 2 * jnp.pi * np.random.rand()]
 opt_init, opt_update, get_params = optimizers.adam(step_size=1e-2)
 opt_state = opt_init(init_params)
 
@@ -67,7 +65,7 @@ def step(i, opt_state, opt_update):
     g = grad(cost)(params)
     return opt_update(i, g, opt_state)
 
-epochs = 200
+epochs = 150
 loss_hist = []
 
 for epoch in range(epochs):
@@ -81,7 +79,7 @@ for epoch in range(epochs):
 
 print("\nBest action: Rx = {}. Ry = {}. Rz = {}.".format(params[0], params[1], params[2]))   
 output = circuit(params)
-print("Quantum state output = {}.\n".format(output))    
+print("Quantum state output = {}.\n".format(np.round(output,3)))    
 
 plt.plot(loss_hist)
 plt.ylabel("Loss")
