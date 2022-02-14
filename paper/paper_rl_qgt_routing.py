@@ -242,12 +242,19 @@ class Bandit:
         self.indices = np.arange(len(self.all_actions))
 
     def reset(self):
-        self.q_estimation = np.zeros(len(self.indices)) - np.random.uniform(100, 200)
+        if self.gradient==True:
+            self.q_estimation = np.zeros(len(self.indices))
+        else:
+            self.q_estimation = np.zeros(len(self.indices)) - 200
+        if self.e_decay == True:
+            self.epsilon = 0.99
         self.action_count = np.zeros(len(self.indices))
         self.average_reward = 0
         self.time = 0
 
     def act(self):
+        if self.e_decay == True:
+            self.epsilon *= 0.991
         if np.random.rand() < self.epsilon:
             return np.random.choice(self.indices)
         if self.gradient:
@@ -276,42 +283,37 @@ class Bandit:
         return reward
 
 def simulate(runs, time, bandits):
-    SHOW_EVERY = 50
-    all_rewards = []
-    all_rewards_avg = []
+    rewards = np.zeros((len(bandits), runs, time))
+    rewards_avg = np.zeros(rewards.shape)    
     for i, bandit in enumerate(bandits):
-        for r in range(runs):       # falta ver cómo promediar las diferentes runs
+        for r in range(runs):   
             bandit.reset()
-            rewards = []
-            rewards_avg = []
             for t in trange(time):
                 action = bandit.act()
                 reward = bandit.step(action)
-                rewards.append(reward)
-                rewards_avg.append(np.mean(np.array(rewards)))
-                if t % SHOW_EVERY == 0:
-                    print("Episode = {}. Reward = {}.".format(t, reward))
-        all_rewards.append(rewards)
-        all_rewards_avg.append(rewards_avg)
-    return all_rewards, all_rewards_avg      
+                rewards[i, r, t] = -reward
+                rewards_avg[i, r, t] = np.mean(rewards[i,r,0:t+1])
+        mean_rewards = rewards.mean(axis=1)
+        mean_rewards_avg = rewards_avg.mean(axis=1)
+    return mean_rewards, mean_rewards_avg      
 
-def figure(runs=1, time=512):
+def figure(runs=10, time=512):
     bandits = []
-    #bandits.append(Bandit(epsilon=0.1, step_size=0.1))
-    #bandits.append(Bandit(e_decay=True))
+    bandits.append(Bandit())
+    bandits.append(Bandit(e_decay=True))
     bandits.append(Bandit(sample_averages=True))
-    #bandits.append(Bandit(e_decay=True, sample_averages=True))
-    #bandits.append(Bandit(gradient=True))
+    bandits.append(Bandit(e_decay=True, sample_averages=True))
+    bandits.append(Bandit(gradient=True))
     labels = [
-        #'e = 0.1, a = 0.1',
-        #'e = decay, a = 0.1', 
-        'e = 0.1, a = 1/n' 
-        #'e = decay, a = 1/n', 
-        #'gradient bandit'
+        'e = 0.1, a = 0.1',
+        'e = decay, a = 0.1', 
+        'e = 0.1, a = 1/n', 
+        'e = decay, a = 1/n', 
+        'gradient bandit'
     ]
-    _ , mean_rewards = simulate(runs, time, bandits)
+    mean_rewards , mean_rewards_avg = simulate(runs, time, bandits)
     
-    N_SIZE = 3
+    """N_SIZE = 3
     angulos = np.arange(0, 2 * np.pi, 2 * np.pi / np.power(2, N_SIZE))
     all_actions = [(rx,ry,rz) for rx in angulos for ry in angulos for rz in angulos]   
     max_value = np.max(bandits[0].q_estimation)
@@ -319,10 +321,10 @@ def figure(runs=1, time=512):
     rotat = all_actions[indices]
     print("\nBest action: Rx = {}. Ry = {}. Rz = {}.".format(rotat[0], rotat[1], rotat[2]))    
     output = output_state(rotat[0], rotat[1], rotat[2])
-    print("Quantum state output = {}.\n".format(output))    
+    print("Quantum state output = {}.\n".format(output)) """   
     
     for i in range(len(bandits)):
-        plt.plot(mean_rewards[i], label=labels[i])
+        plt.plot(mean_rewards_avg[i], label=labels[i])
     plt.xlabel('Steps')
     plt.ylabel('Time')
     plt.legend()
