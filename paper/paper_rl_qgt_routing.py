@@ -177,14 +177,13 @@ def output_state(dx,dy,dz):
     outputstate = result.get_statevector(circ, decimals=5)
     return outputstate
 
-def reward_qnet(rx, ry, rz):    
+def reward_qnet(rx, ry, rz, n3):    
 
     if checkear_nozero([rx,ry,rz,1]) == 0:
         return 200
 
     n1 = 10                                       # cantidad de ciudades
     n2 = 100                                      # cantidad de paquetes
-    n3 = 14
     p1 = [rx, ry, rz, 1]
 
     a = generar_mapa(n1, n3)                      # genero matriz
@@ -229,16 +228,14 @@ def reward_qnet(rx, ry, rz):
 ################################################## Network settings
 
 class Bandit:
-    def __init__(self, epsilon=0.1, e_decay=False, step_size=0.1, sample_averages=False, gradient=False):
+    def __init__(self, all_actions, epsilon=0.1, e_decay=False, step_size=0.1, sample_averages=False, gradient=False):
         self.epsilon = epsilon
         self.e_decay = e_decay
         self.step_size = step_size
         self.sample_averages = sample_averages
         self.gradient = gradient
 
-        self.N_SIZE = 3
-        self.angulos = np.arange(0, 2 * np.pi, 2 * np.pi / np.power(2, self.N_SIZE))
-        self.all_actions = [(rx,ry,rz) for rx in self.angulos for ry in self.angulos for rz in self.angulos]
+        self.all_actions = all_actions
         self.indices = np.arange(len(self.all_actions))
 
     def reset(self):
@@ -264,9 +261,9 @@ class Bandit:
         q_best = np.max(self.q_estimation)
         return np.random.choice(np.where(self.q_estimation == q_best)[0])
 
-    def step(self, action):
+    def step(self, action, n3):
         rotat = self.all_actions[action]
-        reward = -reward_qnet(rotat[0],rotat[1],rotat[2])
+        reward = -reward_qnet(rotat[0],rotat[1],rotat[2], n3)
         self.time += 1
         self.action_count[action] += 1
         self.average_reward += (reward - self.average_reward) / self.time
@@ -282,28 +279,43 @@ class Bandit:
             self.q_estimation[action] += self.step_size * (reward - self.q_estimation[action])
         return reward
 
-def simulate(runs, time, bandits):
+def simulate(bandits, all_actions):
+    time = 1024
+    runs = 1
+    n3 = [[14, 0.14, 14],                    # distancias máximas
+          [0,  512,  768, time]]    
     rewards = np.zeros((len(bandits), runs, time))
-    rewards_avg = np.zeros(rewards.shape)    
+    rewards_avg = np.zeros(rewards.shape)  
     for i, bandit in enumerate(bandits):
         for r in range(runs):   
             bandit.reset()
+            type = 0
             for t in trange(time):
+                if t > n3[1][type+1]:
+                    type += 1                
                 action = bandit.act()
-                reward = bandit.step(action)
+                reward = bandit.step(action, n3[0][type])
                 rewards[i, r, t] = -reward
-                rewards_avg[i, r, t] = np.mean(rewards[i,r,0:t+1])
+                rewards_avg[i, r, t] = np.mean(rewards[i,r,n3[1][type]:t+1])
         mean_rewards = rewards.mean(axis=1)
         mean_rewards_avg = rewards_avg.mean(axis=1)
+
+        rotat = all_actions[action]
+        print("\nBest action: Rx = {}. Ry = {}. Rz = {}.".format(rotat[0], rotat[1], rotat[2]))
+        output = output_state(rotat[0], rotat[1], rotat[2])
+        print("Quantum state output = {}.\n".format(output))
     return mean_rewards, mean_rewards_avg      
 
-def figure(runs=10, time=512):
+def VQC():
+    N_SIZE = 3
+    angulos = np.arange(0, 2 * np.pi, 2 * np.pi / np.power(2, N_SIZE))
+    all_actions = [(rx,ry,rz) for rx in angulos for ry in angulos for rz in angulos]
     bandits = []
-    bandits.append(Bandit())
-    bandits.append(Bandit(e_decay=True))
-    bandits.append(Bandit(sample_averages=True))
-    bandits.append(Bandit(e_decay=True, sample_averages=True))
-    bandits.append(Bandit(gradient=True))
+    bandits.append(Bandit(all_actions=all_actions))
+    bandits.append(Bandit(all_actions=all_actions, e_decay=True))
+    bandits.append(Bandit(all_actions=all_actions, sample_averages=True))
+    bandits.append(Bandit(all_actions=all_actions, e_decay=True, sample_averages=True))
+    bandits.append(Bandit(all_actions=all_actions, gradient=True))
     labels = [
         'e = 0.1, a = 0.1',
         'e = decay, a = 0.1', 
@@ -311,24 +323,21 @@ def figure(runs=10, time=512):
         'e = decay, a = 1/n', 
         'gradient bandit'
     ]
-    mean_rewards , mean_rewards_avg = simulate(runs, time, bandits)
+    mean_rewards , mean_rewards_avg = simulate(bandits, all_actions)
     
-    """N_SIZE = 3
-    angulos = np.arange(0, 2 * np.pi, 2 * np.pi / np.power(2, N_SIZE))
-    all_actions = [(rx,ry,rz) for rx in angulos for ry in angulos for rz in angulos]   
-    max_value = np.max(bandits[0].q_estimation)
-    indices = np.random.choice(np.where(bandits[0].q_estimation == max_value)[0]) 
-    rotat = all_actions[indices]
-    print("\nBest action: Rx = {}. Ry = {}. Rz = {}.".format(rotat[0], rotat[1], rotat[2]))    
-    output = output_state(rotat[0], rotat[1], rotat[2])
-    print("Quantum state output = {}.\n".format(output)) """   
-    
+    fig, axs = plt.subplots(2, 1, figsize=(30,20))
     for i in range(len(bandits)):
-        plt.plot(mean_rewards_avg[i], label=labels[i])
-    plt.xlabel('Steps')
-    plt.ylabel('Time')
-    plt.legend()
+        axs[0].plot(mean_rewards[i], label=labels[i])
+        axs[1].plot(mean_rewards_avg[i], label=labels[i])
+
+    axs[0].set_title("Learning quantum strategies")
+    axs[0].set_ylabel("Total Time")
+    axs[1].set_ylabel("Mean Time")
+    axs[1].set_xlabel("Episodes")
+
+    axs[0].legend()
+    axs[1].legend()
     plt.show()
 
 if __name__ == '__main__':
-    figure()
+    VQC()
