@@ -2,7 +2,6 @@ import numpy as np
 import jax.numpy as jnp
 from jax.example_libraries import optimizers
 from jax import grad
-
 import matplotlib.pyplot as plt
 from functools import reduce
 

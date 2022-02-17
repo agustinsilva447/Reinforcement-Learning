@@ -1,10 +1,7 @@
-import copy
-import time
-import pickle                      
-import random
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
+import copy
 from tqdm import trange
 
 from qiskit import QuantumCircuit, Aer, execute
@@ -280,7 +277,7 @@ class Bandit:
         return reward
 
 def simulate(bandits, all_actions):
-    time = 1024
+    time = 1280
     runs = 1
     n3 = [[14, 0.14, 14],                    # distancias máximas
           [0,  512,  768, time]]    
@@ -321,7 +318,7 @@ def VQC():
         'e = decay, a = 0.1', 
         'e = 0.1, a = 1/n', 
         'e = decay, a = 1/n', 
-        'gradient bandit'
+        'gradient ascent'
     ]
     mean_rewards , mean_rewards_avg = simulate(bandits, all_actions)
     
@@ -330,12 +327,12 @@ def VQC():
         axs[0].plot(mean_rewards[i], label=labels[i])
         axs[1].plot(mean_rewards_avg[i], label=labels[i])
 
-    axs[0].set_title("Learning quantum strategies")
+    axs[0].set_title("Learning quantum strategiesin a Network Routing Environment")
     axs[0].set_ylabel("Total Time")
     axs[1].set_ylabel("Mean Time")
     axs[1].set_xlabel("Episodes")
 
-    axs[0].legend()
+    #axs[0].legend()
     axs[1].legend()
     plt.show()
 
