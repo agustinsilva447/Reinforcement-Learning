@@ -288,7 +288,7 @@ def simulate(bandits, all_actions):
             bandit.reset()
             type = 0
             for t in trange(time):
-                if t > n3[1][type+1]:
+                if t >= n3[1][type+1]:
                     type += 1                
                 action = bandit.act()
                 reward = bandit.step(action, n3[0][type])
@@ -321,19 +321,25 @@ def VQC():
         'gradient ascent'
     ]
     mean_rewards , mean_rewards_avg = simulate(bandits, all_actions)
+
+    perf_ideal_1 = 37.4592
+    perf_ideal_2 = 16.4807
+    perf_network            = 100 * perf_ideal_1 / mean_rewards
+    perf_network[:,512:768] = 100 * perf_ideal_2 / mean_rewards[:,512:768]
+    perf_network_avg            = 100 * perf_ideal_1 / mean_rewards_avg
+    perf_network_avg[:,512:768] = 100 * perf_ideal_2 / mean_rewards_avg[:,512:768]
     
     fig, axs = plt.subplots(2, 1, figsize=(30,20))
     for i in range(len(bandits)):
         axs[0].plot(mean_rewards[i], label=labels[i])
-        axs[1].plot(mean_rewards_avg[i], label=labels[i])
+        axs[1].plot(perf_network_avg[i], label=labels[i])
 
-    axs[0].set_title("Learning quantum strategiesin a Network Routing Environment")
+    axs[0].set_title("Learning quantum strategiesin a Network Routing Environment (Total time)")
+    axs[1].set_title("Learning quantum strategiesin a Network Routing Environment (Avg performance)")
     axs[0].set_ylabel("Total Time")
     axs[1].set_ylabel("Mean Time")
     axs[1].set_xlabel("Episodes")
-
-    #axs[0].legend()
-    axs[1].legend()
+    axs[1].legend(loc='upper right')
     plt.show()
 
 if __name__ == '__main__':

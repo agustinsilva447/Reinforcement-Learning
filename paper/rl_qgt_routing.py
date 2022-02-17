@@ -226,11 +226,11 @@ def reward_qnet(rx, ry, rz, n3):
 
 ################################################## Network settings
 
-HM_EPISODES = 2 * 512 + 1
-SHOW_EVERY = 16
+HM_EPISODES = 512
+SHOW_EVERY = 1
 N_SIZE = 3
-n3 = [[14, 0.14],                    # distancias máximas
-      [0, 512, HM_EPISODES]]
+n3 = [[0.14],                    # distancias máximas
+      [0, HM_EPISODES]]
 
 """
 HM_EPISODES = 2 * 4092 + 1
@@ -248,10 +248,10 @@ all_actions = [(rx,ry,rz) for rx in angulos for ry in angulos for rz in angulos]
 ################################################## Epsilon and Alfa
 
 start_q_table = None        # if we have a pickled Q table, we'll put the filename of it here.
-epsilon =   [[0.99, 0.991, '1/n'],   # epsilon variable y alfa variable
-             [0.1 , 1 , '1/n'],      # epsilon constante y alfa variable
-             [0.1 , 1 , 0.1],        # epsilon constante y alfa constante
-             [0.99 , 0.991 , 0.1]]   # epsilon variable y alfa constante
+epsilon =   [[0.99, 0.991, '1/n']]    # epsilon variable y alfa variable
+             #[0.1 , 1 , '1/n'],      # epsilon constante y alfa variable
+             #[0.1 , 1 , 0.1],        # epsilon constante y alfa constante
+             #[0.99 , 0.991 , 0.1]]   # epsilon variable y alfa constante
 
 for it in range(len(epsilon)):
     print("ITERATION: {}.".format(it+1))
@@ -310,7 +310,7 @@ for it in range(len(epsilon)):
 
 ################################################## Stochastic Gradient Ascent
 
-alfa = 0.1
+"""alfa = 0.1
 start_h_table = None        # if we have a pickled Q table, we'll put the filename of it here.
 
 if start_h_table is None:
@@ -373,25 +373,25 @@ print("Quantum state output = {}.\n".format(output))
 episode_reward = np.negative(np.array(episode_reward))
 episode_rewards = np.negative(np.array(episode_rewards))
 final_t.append(episode_reward)
-final_m.append(episode_rewards)
+final_m.append(episode_rewards)"""
 
 ################################################## Algorithms Comparison
 
 fig, axs = plt.subplots(2, 1) #,figsize=(30,20))
 axs[0].set_title("Learning Rx, Ry and Rz for the congestion mitigation problem.")
 axs[0].plot(final_t[0], label = "Epsilon variable y Alfa variable")
-axs[0].plot(final_t[1], label = "Epsilon constante y Alfa variable")
-axs[0].plot(final_t[2], label = "Epsilon constante y Alfa constante")
-axs[0].plot(final_t[3], label = "Epsilon variable y Alfa constante")
-axs[0].plot(final_t[4], label = "Stochastic Gradient Ascent")
+#axs[0].plot(final_t[1], label = "Epsilon constante y Alfa variable")
+#axs[0].plot(final_t[2], label = "Epsilon constante y Alfa constante")
+#axs[0].plot(final_t[3], label = "Epsilon variable y Alfa constante")
+#axs[0].plot(final_t[4], label = "Stochastic Gradient Ascent")
 axs[0].set_ylabel("Total Time")
 axs[0].legend(loc='upper right')
 axs[1].set_title("Learning Rx, Ry and Rz for the congestion mitigation problem [average].")
 axs[1].plot(final_m[0], label = "Epsilon variable y Alfa variable")
-axs[1].plot(final_m[1], label = "Epsilon constante y Alfa variable")
-axs[1].plot(final_m[2], label = "Epsilon constante y Alfa constante")
-axs[1].plot(final_m[3], label = "Epsilon variable y Alfa constante")
-axs[1].plot(final_m[4], label = "Stochastic Gradient Ascent")
+#axs[1].plot(final_m[1], label = "Epsilon constante y Alfa variable")
+#axs[1].plot(final_m[2], label = "Epsilon constante y Alfa constante")
+#axs[1].plot(final_m[3], label = "Epsilon variable y Alfa constante")
+#axs[1].plot(final_m[4], label = "Stochastic Gradient Ascent")
 axs[1].set_ylabel("Total Time")
 axs[1].set_xlabel("Episodes")
 axs[1].legend(loc='upper right')
