@@ -247,14 +247,14 @@ class Bandit:
         self.time = 0
 
     def act(self):
-        if self.e_decay == True:
-            self.epsilon *= 0.991
-        if np.random.rand() < self.epsilon:
-            return np.random.choice(self.indices)
         if self.gradient:
             exp_est = np.exp(self.q_estimation)
             self.action_prob = exp_est / np.sum(exp_est)
             return np.random.choice(self.indices, p=self.action_prob)
+        if self.e_decay == True:
+            self.epsilon *= 0.991
+        if np.random.rand() < self.epsilon:
+            return np.random.choice(self.indices)
         q_best = np.max(self.q_estimation)
         return np.random.choice(np.where(self.q_estimation == q_best)[0])
 
@@ -294,13 +294,13 @@ def simulate(bandits, all_actions):
                 reward = bandit.step(action, n3[0][type])
                 rewards[i, r, t] = -reward
                 rewards_avg[i, r, t] = np.mean(rewards[i,r,n3[1][type]:t+1])
-        mean_rewards = rewards.mean(axis=1)
-        mean_rewards_avg = rewards_avg.mean(axis=1)
 
         rotat = all_actions[action]
         print("\nBest action: Rx = {}. Ry = {}. Rz = {}.".format(rotat[0], rotat[1], rotat[2]))
         output = output_state(rotat[0], rotat[1], rotat[2])
         print("Quantum state output = {}.\n".format(output))
+    mean_rewards = rewards.mean(axis=1)
+    mean_rewards_avg = rewards_avg.mean(axis=1)
     return mean_rewards, mean_rewards_avg      
 
 def VQC():
@@ -334,8 +334,8 @@ def VQC():
         axs[0].plot(mean_rewards[i], label=labels[i])
         axs[1].plot(perf_network_avg[i], label=labels[i])
 
-    axs[0].set_title("Learning quantum strategiesin a Network Routing Environment (Total time)")
-    axs[1].set_title("Learning quantum strategiesin a Network Routing Environment (Avg performance)")
+    axs[0].set_title("Learning quantum strategies in a Network Routing Environment (Total time)")
+    axs[1].set_title("Learning quantum strategies in a Network Routing Environment (Avg performance)")
     axs[0].set_ylabel("Total Time")
     axs[1].set_ylabel("Mean Time")
     axs[1].set_xlabel("Episodes")
