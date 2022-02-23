@@ -225,7 +225,7 @@ def reward_qnet(rx, ry, rz, n3):
 ################################################## Network settings
 
 class Bandit:
-    def __init__(self, all_actions, epsilon=0.1, e_decay=False, step_size=0.1, sample_averages=False, gradient=False):
+    def __init__(self, all_actions, epsilon=0.99, e_decay=False, step_size=0.1, sample_averages=False, gradient=False):
         self.epsilon = epsilon
         self.e_decay = e_decay
         self.step_size = step_size
@@ -266,7 +266,8 @@ class Bandit:
         self.average_reward += (reward - self.average_reward) / self.time
 
         if self.sample_averages:
-            self.q_estimation[action] += (reward - self.q_estimation[action]) / self.action_count[action]
+            #self.q_estimation[action] += (reward - self.q_estimation[action]) / self.action_count[action]
+            self.step_size = 1 / self.action_count[action]
         elif self.gradient:
             one_hot = np.zeros(len(self.all_actions))
             one_hot[action] = 1
@@ -277,10 +278,12 @@ class Bandit:
         return reward
 
 def simulate(bandits, all_actions):
-    time = 1280
+    time = 512
     runs = 1
-    n3 = [[14, 0.14, 14],                    # distancias máximas
-          [0,  512,  768, time]]    
+    """n3 = [[14, 0.14, 14],                    # distancias máximas
+          [0,  512,  768, time]]   """ 
+    n3 = [[14],
+          [0, time]]
     rewards = np.zeros((len(bandits), runs, time))
     rewards_avg = np.zeros(rewards.shape)  
     for i, bandit in enumerate(bandits):
@@ -313,12 +316,14 @@ def VQC():
     bandits.append(Bandit(all_actions=all_actions, sample_averages=True))
     bandits.append(Bandit(all_actions=all_actions, e_decay=True, sample_averages=True))
     bandits.append(Bandit(all_actions=all_actions, gradient=True))
+    bandits.append(Bandit(all_actions=all_actions, sample_averages=True, gradient=True))
     labels = [
         'e = 0.1, a = 0.1',
         'e = decay, a = 0.1', 
         'e = 0.1, a = 1/n', 
         'e = decay, a = 1/n', 
-        'gradient ascent'
+        'gradient ascent', 
+        'gradient ascent, a = 1/n'
     ]
     mean_rewards , mean_rewards_avg = simulate(bandits, all_actions)
 
