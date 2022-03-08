@@ -56,13 +56,13 @@ class Blob:
 
 style.use("ggplot")         # setting our style!
 SIZE = 10
-HM_EPISODES = 25000
+HM_EPISODES = 1000
 MOVE_PENALTY = 1            # feel free to tinker with these!
 ENEMY_PENALTY = 300         # feel free to tinker with these!
 FOOD_REWARD = 25            # feel free to tinker with these!
 epsilon = 0.5               # randomness
 EPS_DECAY = 0.9999          # Every episode will be epsilon*EPS_DECAY
-SHOW_EVERY = 1000           # how often to play through env visually.
+SHOW_EVERY = 100            # how often to play through env visually.
 start_q_table = None        # if we have a pickled Q table, we'll put the filename of it here.
 LEARNING_RATE = 0.1
 DISCOUNT = 0.95

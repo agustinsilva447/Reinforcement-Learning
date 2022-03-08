@@ -268,7 +268,7 @@ class Bandit:
         if self.sample_averages:
             #self.q_estimation[action] += (reward - self.q_estimation[action]) / self.action_count[action]
             self.step_size = 1 / self.action_count[action]
-        elif self.gradient:
+        if self.gradient:
             one_hot = np.zeros(len(self.all_actions))
             one_hot[action] = 1
             baseline = self.average_reward
