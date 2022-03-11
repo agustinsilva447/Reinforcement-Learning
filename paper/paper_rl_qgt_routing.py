@@ -225,8 +225,8 @@ def reward_qnet(rx, ry, rz, n3):
 ################################################## Network settings
 
 class Bandit:
-    def __init__(self, all_actions, epsilon=0.99, e_decay=False, step_size=0.1, sample_averages=False, gradient=False):
-        self.epsilon = epsilon
+    def __init__(self, all_actions, epsilon_0=0.1, e_decay=1, step_size=0.1, sample_averages=False, gradient=False):
+        self.epsilon_0 = epsilon_0
         self.e_decay = e_decay
         self.step_size = step_size
         self.sample_averages = sample_averages
@@ -240,8 +240,7 @@ class Bandit:
             self.q_estimation = np.zeros(len(self.indices))
         else:
             self.q_estimation = np.zeros(len(self.indices)) - 200
-        if self.e_decay == True:
-            self.epsilon = 0.99
+        self.epsilon = self.epsilon_0
         self.action_count = np.zeros(len(self.indices))
         self.average_reward = 0
         self.time = 0
@@ -251,8 +250,7 @@ class Bandit:
             exp_est = np.exp(self.q_estimation)
             self.action_prob = exp_est / np.sum(exp_est)
             return np.random.choice(self.indices, p=self.action_prob)
-        if self.e_decay == True:
-            self.epsilon *= 0.991
+        self.epsilon *= self.e_decay
         if np.random.rand() < self.epsilon:
             return np.random.choice(self.indices)
         q_best = np.max(self.q_estimation)
@@ -266,7 +264,6 @@ class Bandit:
         self.average_reward += (reward - self.average_reward) / self.time
 
         if self.sample_averages:
-            #self.q_estimation[action] += (reward - self.q_estimation[action]) / self.action_count[action]
             self.step_size = 1 / self.action_count[action]
         if self.gradient:
             one_hot = np.zeros(len(self.all_actions))
@@ -277,14 +274,13 @@ class Bandit:
             self.q_estimation[action] += self.step_size * (reward - self.q_estimation[action])
         return reward
 
-def simulate(bandits, all_actions):
-    time = 512
-    runs = 1
+def simulate(bandits, all_actions, time, runs):
     """n3 = [[14, 0.14, 14],                    # distancias máximas
           [0,  512,  768, time]]   """ 
     n3 = [[14],
           [0, time]]
     rewards = np.zeros((len(bandits), runs, time))
+    fidelity = np.zeros((len(bandits), runs, time))
     rewards_avg = np.zeros(rewards.shape)  
     for i, bandit in enumerate(bandits):
         for r in range(runs):   
@@ -295,6 +291,7 @@ def simulate(bandits, all_actions):
                     type += 1                
                 action = bandit.act()
                 reward = bandit.step(action, n3[0][type])
+                #fidelity = quantum_fidelity(action)
                 rewards[i, r, t] = -reward
                 rewards_avg[i, r, t] = np.mean(rewards[i,r,n3[1][type]:t+1])
 
@@ -310,11 +307,16 @@ def VQC():
     N_SIZE = 3
     angulos = np.arange(0, 2 * np.pi, 2 * np.pi / np.power(2, N_SIZE))
     all_actions = [(rx,ry,rz) for rx in angulos for ry in angulos for rz in angulos]
+    time = 100
+    runs = 1
+    epsilon_0 = 0.99
+    epsilon_f = 0.01
+    e_decay = np.power(epsilon_f/epsilon_0, 1/time)    
     bandits = []
     bandits.append(Bandit(all_actions=all_actions))
-    bandits.append(Bandit(all_actions=all_actions, e_decay=True))
+    bandits.append(Bandit(all_actions=all_actions, epsilon_0=epsilon_0, e_decay=e_decay))
     bandits.append(Bandit(all_actions=all_actions, sample_averages=True))
-    bandits.append(Bandit(all_actions=all_actions, e_decay=True, sample_averages=True))
+    bandits.append(Bandit(all_actions=all_actions, epsilon_0=epsilon_0, e_decay=e_decay, sample_averages=True))
     bandits.append(Bandit(all_actions=all_actions, gradient=True))
     bandits.append(Bandit(all_actions=all_actions, sample_averages=True, gradient=True))
     labels = [
@@ -325,7 +327,7 @@ def VQC():
         'gradient ascent', 
         'gradient ascent, a = 1/n'
     ]
-    mean_rewards , mean_rewards_avg = simulate(bandits, all_actions)
+    mean_rewards , mean_rewards_avg = simulate(bandits, all_actions, time, runs)
 
     perf_ideal_1 = 37.4592
     perf_ideal_2 = 16.4807
