@@ -106,27 +106,20 @@ def juego(lista, tipo):
     return lista
 
 def output_state(dx,dy,dz):
-    I_f = np.array([[1, 0],
-                [0, 1]]) 
     I = np.array([[1, 0],
                 [0, 1]])
-    X_f = np.array([[0, 1],
-                [1, 0]]) 
     X = np.array([[0, 1],
                 [1, 0]])    
-    for q in range(1):
-        I_f = np.kron(I_f, I)
-        X_f = np.kron(X_f, X)
+    I_f = np.kron(I, I)
+    X_f = np.kron(X, X)
     J = Operator(1 / np.sqrt(2) * (I_f + 1j * X_f))    
     J_dg = J.adjoint()
     circ = QuantumCircuit(2,2)
     circ.append(J, range(2))
-
     for q in range(2):
         circ.append(RXGate(dx),[q])
         circ.append(RYGate(dy),[q])
         circ.append(RZGate(dz),[q])    
-
     circ.append(J_dg, range(2))
     backend = Aer.get_backend('statevector_simulator')
     job = backend.run(circ)
@@ -283,8 +276,8 @@ def VQC():
     N_SIZE = 3
     angulos = np.arange(0, 2 * np.pi, 2 * np.pi / np.power(2, N_SIZE))
     all_actions = [(rx,ry,rz) for rx in angulos for ry in angulos for rz in angulos]
-    time = 100
-    runs = 2
+    time = 10
+    runs = 1
     epsilon_0 = 0.99
     epsilon_f = 0.01
     e_decay = np.power(epsilon_f/epsilon_0, 1/time)    
