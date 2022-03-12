@@ -4,9 +4,10 @@ import matplotlib.pyplot as plt
 import copy
 from tqdm import trange
 
-from qiskit import QuantumCircuit, Aer, execute
+from qiskit import QuantumCircuit, Aer
 from qiskit.quantum_info import Operator
 from qiskit.extensions import RXGate, RYGate, RZGate    
+from qiskit.quantum_info.states.measures import state_fidelity
 
 ################################################## Quantum Game
 def generar_mapa(n1, n3):
@@ -58,41 +59,6 @@ def paquetes_en_ruta(camin, ruta, n2):
             lista.append(i)
     return lista
 
-def crear_circuito(n, tipo):
-    I_f = np.array([[1, 0],
-                  [0, 1]]) 
-    I = np.array([[1, 0],
-                  [0, 1]])
-    X_f = np.array([[0, 1],
-                  [1, 0]]) 
-    X = np.array([[0, 1],
-                  [1, 0]])    
-    for q in range(n-1):
-        I_f = np.kron(I_f, I)
-        X_f = np.kron(X_f, X)
-    J = Operator(1 / np.sqrt(2) * (I_f + 1j * X_f))    
-    J_dg = J.adjoint()
-    circ = QuantumCircuit(n,n)
-    circ.append(J, range(n))
-    if n==1:
-        dx = np.pi
-        dy = 0
-        dz = 0
-    elif n==2:    
-        # barrido
-        dx = tipo[0]
-        dy = tipo[1]
-        dz = tipo[2]
-
-    for q in range(n):
-        circ.append(RXGate(dx),[q])
-        circ.append(RYGate(dy),[q])
-        circ.append(RZGate(dz),[q])    
-
-    circ.append(J_dg, range(n))
-    circ.measure(range(n), range(n))  
-    return circ
-
 def state_out_new_p(x,y,z):
     # all these were calculated with sympy in order to speed computing time
     sqrt_2 = np.sqrt(2)
@@ -139,12 +105,6 @@ def juego(lista, tipo):
             m = len(lista)         
     return lista
 
-def checkear_nozero(check):
-    circ = crear_circuito(2, check)
-    backend = Aer.get_backend('qasm_simulator')
-    measurement = execute(circ, backend=backend, shots=1000).result().get_counts(circ)
-    return ['00'] != list(measurement.keys())
-
 def output_state(dx,dy,dz):
     I_f = np.array([[1, 0],
                 [0, 1]]) 
@@ -174,10 +134,17 @@ def output_state(dx,dy,dz):
     outputstate = result.get_statevector(circ, decimals=5)
     return outputstate
 
+def checkear_nozero(rx,ry,rz):
+    outputstate = output_state(rx,ry,rz)
+    target_state = [0, np.sqrt(2)/2, np.sqrt(2)/2, 0]
+    fidelity = state_fidelity(outputstate, target_state)
+    return (np.abs(outputstate[0]) != 1), fidelity
+
 def reward_qnet(rx, ry, rz, n3):    
 
-    if checkear_nozero([rx,ry,rz,1]) == 0:
-        return 200
+    zero_check, fidelity = checkear_nozero(rx,ry,rz)
+    if  zero_check == 0:
+        return [-200, fidelity]
 
     n1 = 10                                       # cantidad de ciudades
     n2 = 100                                      # cantidad de paquetes
@@ -220,7 +187,7 @@ def reward_qnet(rx, ry, rz, n3):
     except ZeroDivisionError:
         temp = 2*n3    
 
-    return (t1 + temp)
+    return [-(t1 + temp), fidelity]
 
 ################################################## Network settings
 
@@ -258,7 +225,7 @@ class Bandit:
 
     def step(self, action, n3):
         rotat = self.all_actions[action]
-        reward = -reward_qnet(rotat[0],rotat[1],rotat[2], n3)
+        [reward, fidelity] = reward_qnet(rotat[0],rotat[1],rotat[2], n3)
         self.time += 1
         self.action_count[action] += 1
         self.average_reward += (reward - self.average_reward) / self.time
@@ -272,7 +239,7 @@ class Bandit:
             self.q_estimation += self.step_size * (reward - baseline) * (one_hot - self.action_prob)
         else:
             self.q_estimation[action] += self.step_size * (reward - self.q_estimation[action])
-        return reward
+        return reward, fidelity
 
 def simulate(bandits, all_actions, time, runs):
     """n3 = [[14, 0.14, 14],                    # distancias máximas
@@ -280,7 +247,7 @@ def simulate(bandits, all_actions, time, runs):
     n3 = [[14],
           [0, time]]
     rewards = np.zeros((len(bandits), runs, time))
-    fidelity = np.zeros((len(bandits), runs, time))
+    fidelities = np.zeros((len(bandits), runs, time))
     rewards_avg = np.zeros(rewards.shape)  
     for i, bandit in enumerate(bandits):
         for r in range(runs):   
@@ -290,10 +257,10 @@ def simulate(bandits, all_actions, time, runs):
                 if t >= n3[1][type+1]:
                     type += 1                
                 action = bandit.act()
-                reward = bandit.step(action, n3[0][type])
-                #fidelity = quantum_fidelity(action)
+                reward, fidelity = bandit.step(action, n3[0][type])
                 rewards[i, r, t] = -reward
                 rewards_avg[i, r, t] = np.mean(rewards[i,r,n3[1][type]:t+1])
+                fidelities[i, r, t] = fidelity
 
         rotat = all_actions[action]
         print("\nBest action: Rx = {}. Ry = {}. Rz = {}.".format(rotat[0], rotat[1], rotat[2]))
@@ -301,13 +268,14 @@ def simulate(bandits, all_actions, time, runs):
         print("Quantum state output = {}.\n".format(output))
     mean_rewards = rewards.mean(axis=1)
     mean_rewards_avg = rewards_avg.mean(axis=1)
-    return mean_rewards, mean_rewards_avg      
+    mean_fidelities = fidelities.mean(axis=1)
+    return mean_rewards, mean_rewards_avg, mean_fidelities      
 
 def VQC():
     N_SIZE = 3
     angulos = np.arange(0, 2 * np.pi, 2 * np.pi / np.power(2, N_SIZE))
     all_actions = [(rx,ry,rz) for rx in angulos for ry in angulos for rz in angulos]
-    time = 100
+    time = 50
     runs = 1
     epsilon_0 = 0.99
     epsilon_f = 0.01
@@ -327,26 +295,30 @@ def VQC():
         'gradient ascent', 
         'gradient ascent, a = 1/n'
     ]
-    mean_rewards , mean_rewards_avg = simulate(bandits, all_actions, time, runs)
+    mean_rewards , mean_rewards_avg, mean_fidelities = simulate(bandits, all_actions, time, runs)
 
-    perf_ideal_1 = 37.4592
-    perf_ideal_2 = 16.4807
-    perf_network            = 100 * perf_ideal_1 / mean_rewards
-    perf_network[:,512:768] = 100 * perf_ideal_2 / mean_rewards[:,512:768]
-    perf_network_avg            = 100 * perf_ideal_1 / mean_rewards_avg
-    perf_network_avg[:,512:768] = 100 * perf_ideal_2 / mean_rewards_avg[:,512:768]
+    perf_ideal_1     = 37.4592
+    perf_network     = 100 * perf_ideal_1 / mean_rewards
+    perf_network_avg = 100 * perf_ideal_1 / mean_rewards_avg
     
-    fig, axs = plt.subplots(2, 1, figsize=(30,20))
+    #perf_ideal_2 = 16.4807
+    #perf_network[:,512:768] = 100 * perf_ideal_2 / mean_rewards[:,512:768]
+    #perf_network_avg[:,512:768] = 100 * perf_ideal_2 / mean_rewards_avg[:,512:768]
+    
+    fig, axs = plt.subplots(3, 1, figsize=(30,30))
     for i in range(len(bandits)):
         axs[0].plot(mean_rewards[i], label=labels[i])
         axs[1].plot(perf_network_avg[i], label=labels[i])
+        axs[2].plot(mean_fidelities[i], label=labels[i])
 
     axs[0].set_title("Learning quantum strategies in a Network Routing Environment (Total time)")
     axs[1].set_title("Learning quantum strategies in a Network Routing Environment (Avg performance)")
+    axs[2].set_title("Learning quantum strategies in a Network Routing Environment (Fidelity)")
     axs[0].set_ylabel("Total Time")
     axs[1].set_ylabel("Mean Time")
-    axs[1].set_xlabel("Episodes")
-    axs[1].legend(loc='upper right')
+    axs[2].set_ylabel("Fidelity")
+    axs[2].set_xlabel("Episodes")
+    axs[0].legend(loc='upper right')
     plt.show()
 
 if __name__ == '__main__':
