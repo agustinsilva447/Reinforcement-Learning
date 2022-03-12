@@ -247,8 +247,9 @@ def simulate(bandits, all_actions, time, runs):
     n3 = [[14],
           [0, time]]
     rewards = np.zeros((len(bandits), runs, time))
-    fidelities = np.zeros((len(bandits), runs, time))
     rewards_avg = np.zeros(rewards.shape)  
+    fidelities = np.zeros((len(bandits), runs, time))
+    fidelities_avg = np.zeros(fidelities.shape)   
     for i, bandit in enumerate(bandits):
         for r in range(runs):   
             bandit.reset()
@@ -261,6 +262,7 @@ def simulate(bandits, all_actions, time, runs):
                 rewards[i, r, t] = -reward
                 rewards_avg[i, r, t] = np.mean(rewards[i,r,n3[1][type]:t+1])
                 fidelities[i, r, t] = fidelity
+                fidelities_avg[i, r, t] = np.mean(fidelities[i,r,n3[1][type]:t+1])
 
         rotat = all_actions[action]
         print("\nBest action: Rx = {}. Ry = {}. Rz = {}.".format(rotat[0], rotat[1], rotat[2]))
@@ -269,7 +271,8 @@ def simulate(bandits, all_actions, time, runs):
     mean_rewards = rewards.mean(axis=1)
     mean_rewards_avg = rewards_avg.mean(axis=1)
     mean_fidelities = fidelities.mean(axis=1)
-    return mean_rewards, mean_rewards_avg, mean_fidelities      
+    mean_fidelities_avg = fidelities_avg.mean(axis=1)
+    return mean_rewards, mean_rewards_avg, mean_fidelities, mean_fidelities_avg
 
 def VQC():
     N_SIZE = 3
@@ -295,7 +298,7 @@ def VQC():
         'gradient ascent', 
         'gradient ascent, a = 1/n'
     ]
-    mean_rewards , mean_rewards_avg, mean_fidelities = simulate(bandits, all_actions, time, runs)
+    mean_rewards , mean_rewards_avg, mean_fidelities, mean_fidelities_avg = simulate(bandits, all_actions, time, runs)
 
     perf_ideal_1     = 37.4592
     perf_network     = 100 * perf_ideal_1 / mean_rewards
@@ -309,7 +312,7 @@ def VQC():
     for i in range(len(bandits)):
         axs[0].plot(mean_rewards[i], label=labels[i])
         axs[1].plot(perf_network_avg[i], label=labels[i])
-        axs[2].plot(mean_fidelities[i], label=labels[i])
+        axs[2].plot(mean_fidelities_avg[i], label=labels[i])
 
     axs[0].set_title("Learning quantum strategies in a Network Routing Environment (Total time)")
     axs[1].set_title("Learning quantum strategies in a Network Routing Environment (Avg performance)")
