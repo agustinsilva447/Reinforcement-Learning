@@ -234,13 +234,11 @@ class Bandit:
             self.q_estimation[action] += self.step_size * (reward - self.q_estimation[action])
         return reward, fidelity
 
-def simulate(bandits, all_actions, time, runs, labels):
-    """n3 = [[14, 0.14, 14],                    # distancias máximas
-          [0,  512,  768, time]]   """ 
-    n3 = [[14],
-          [0, time]]
+def simulate(bandits, all_actions, n3, time, runs, labels):
     rewards = np.zeros((len(bandits), runs, time))
     rewards_avg = np.zeros(rewards.shape)  
+    perf_network = np.zeros((len(bandits), runs, time))
+    perf_network_avg = np.zeros(perf_network.shape) 
     fidelities = np.zeros((len(bandits), runs, time))
     fidelities_avg = np.zeros(fidelities.shape)   
     for i, bandit in enumerate(bandits):
@@ -248,39 +246,51 @@ def simulate(bandits, all_actions, time, runs, labels):
         for r in range(runs):   
             print("Iterations : {}/{}.".format(r+1, runs))
             bandit.reset()
-            type = 0
+            tipo = 0
             for t in trange(time):
-                if t >= n3[1][type+1]:
-                    type += 1                
+                if t >= n3[1][tipo+1]:
+                    tipo += 1                
                 action = bandit.act()
-                reward, fidelity = bandit.step(action, n3[0][type])
+                reward, fidelity = bandit.step(action, n3[0][tipo])
                 rewards[i, r, t] = -reward
-                rewards_avg[i, r, t] = np.mean(rewards[i,r,n3[1][type]:t+1])
+                rewards_avg[i, r, t] = np.mean(rewards[i,r,n3[1][tipo]:t+1])
+                perf_network[i, r, t] =  n3[2][tipo] / rewards[i, r, t]
+                perf_network_avg[i, r, t] = np.mean(perf_network[i,r,n3[1][tipo]:t+1])
                 fidelities[i, r, t] = fidelity
-                fidelities_avg[i, r, t] = np.mean(fidelities[i,r,n3[1][type]:t+1])
+                fidelities_avg[i, r, t] = np.mean(fidelities[i,r,n3[1][tipo]:t+1])
 
             rotat = all_actions[action]
-            print("Best action: Rx = {}. Ry = {}. Rz = {}.".format(rotat[0], rotat[1], rotat[2]))
             output = np.array(output_state(rotat[0], rotat[1], rotat[2]))
+            [rwd_bst, flt_bst] = reward_qnet(rotat[0],rotat[1],rotat[2], n3[0][tipo])
+            prf_bst = -n3[2][tipo] / rwd_bst
+            print("Best action: Rx = {}. Ry = {}. Rz = {}.".format(rotat[0], rotat[1], rotat[2]))
             print("Quantum state output = {}.".format(output))
-            #print("Reward_bst = {}. Fidelity_bst = {}.\n".format())
-            print("Reward_avg = {}. Fidelity_avg = {}.\n".format(rewards_avg[i,r,-1], fidelities_avg[i,r,-1]))
+            print("Performance_bst = {}. Fidelity_bst = {}.".format(prf_bst, flt_bst))
+            print("Performance = {}. Fidelity = {}.\n".format(perf_network_avg[i,r,-1], fidelities_avg[i,r,-1]))
 
-    mean_rewards = rewards.mean(axis=1)
-    mean_rewards_avg = rewards_avg.mean(axis=1)
-    mean_fidelities = fidelities.mean(axis=1)
-    mean_fidelities_avg = fidelities_avg.mean(axis=1)
-    return mean_rewards, mean_rewards_avg, mean_fidelities, mean_fidelities_avg
+    mr = rewards.mean(axis=1)
+    mr_avg = rewards_avg.mean(axis=1)
+    mp = perf_network.mean(axis=1)
+    mp_avg = perf_network_avg.mean(axis=1)
+    mf = fidelities.mean(axis=1)
+    mf_avg = fidelities_avg.mean(axis=1)
+    return mr, mr_avg, mp, mp_avg, mf, mf_avg
 
 def VQC():
     N_SIZE = 3
     angulos = np.arange(0, 2 * np.pi, 2 * np.pi / np.power(2, N_SIZE))
     all_actions = [(rx,ry,rz) for rx in angulos for ry in angulos for rz in angulos]
-    time = 10
+    time = 50
     runs = 1
+    # maxima distancio 14   -> best time 37.4592
+    # maxima distancia 0.14 -> best time 16.4807
+    n3 = [[14],
+          [0, time],
+          [37.4592]]
     epsilon_0 = 0.99
     epsilon_f = 0.01
     e_decay = np.power(epsilon_f/epsilon_0, 1/time)    
+
     bandits = []
     bandits.append(Bandit(all_actions=all_actions))
     bandits.append(Bandit(all_actions=all_actions, epsilon_0=epsilon_0, e_decay=e_decay))
@@ -296,30 +306,22 @@ def VQC():
         'gradient ascent', 
         'gradient ascent, a = 1/n'
     ]
-    mean_rewards , mean_rewards_avg, mean_fidelities, mean_fidelities_avg = simulate(bandits, all_actions, time, runs, labels)
-
-    perf_ideal_1     = 37.4592
-    perf_network     = 100 * perf_ideal_1 / mean_rewards
-    perf_network_avg = 100 * perf_ideal_1 / mean_rewards_avg
-    
-    #perf_ideal_2 = 16.4807
-    #perf_network[:,512:768] = 100 * perf_ideal_2 / mean_rewards[:,512:768]
-    #perf_network_avg[:,512:768] = 100 * perf_ideal_2 / mean_rewards_avg[:,512:768]
+    rewards , rewards_avg, perf_network, perf_network_avg, fidelities, fidelities_avg = simulate(bandits, all_actions, n3, time, runs, labels)
     
     fig, axs = plt.subplots(3, 1, figsize=(30,30))
     for i in range(len(bandits)):
-        axs[0].plot(mean_rewards[i], label=labels[i])
+        axs[0].plot(rewards[i], label=labels[i])
         axs[1].plot(perf_network_avg[i], label=labels[i])
-        axs[2].plot(mean_fidelities_avg[i], label=labels[i])
+        axs[2].plot(fidelities_avg[i], label=labels[i])
 
     axs[0].set_title("Learning quantum strategies in a Network Routing Environment (Total time)")
     axs[1].set_title("Learning quantum strategies in a Network Routing Environment (Avg performance)")
     axs[2].set_title("Learning quantum strategies in a Network Routing Environment (Fidelity)")
     axs[0].set_ylabel("Total Time")
-    axs[1].set_ylabel("Mean Time")
+    axs[1].set_ylabel("Mean Perf %")
     axs[2].set_ylabel("Mean Fidelity")
     axs[2].set_xlabel("Episodes")
-    axs[0].legend(loc='upper right')
+    axs[0].legend(loc='upper left')
     plt.show()
 
 if __name__ == '__main__':
