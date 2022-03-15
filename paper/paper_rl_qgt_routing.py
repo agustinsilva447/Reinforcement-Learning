@@ -293,17 +293,17 @@ def VQC():
 
     bandits = []
     bandits.append(Bandit(all_actions=all_actions))
-    bandits.append(Bandit(all_actions=all_actions, epsilon_0=epsilon_0, e_decay=e_decay))
     bandits.append(Bandit(all_actions=all_actions, sample_averages=True))
+    bandits.append(Bandit(all_actions=all_actions, epsilon_0=epsilon_0, e_decay=e_decay))
     bandits.append(Bandit(all_actions=all_actions, epsilon_0=epsilon_0, e_decay=e_decay, sample_averages=True))
     bandits.append(Bandit(all_actions=all_actions, gradient=True))
     bandits.append(Bandit(all_actions=all_actions, sample_averages=True, gradient=True))
     labels = [
         'e = 0.1, a = 0.1',
-        'e = decay, a = 0.1', 
         'e = 0.1, a = 1/n', 
+        'e = decay, a = 0.1', 
         'e = decay, a = 1/n', 
-        'gradient ascent', 
+        'gradient ascent, a = 0.1', 
         'gradient ascent, a = 1/n'
     ]
     rewards , rewards_avg, perf_network, perf_network_avg, fidelities, fidelities_avg = simulate(bandits, all_actions, n3, time, runs, labels)
