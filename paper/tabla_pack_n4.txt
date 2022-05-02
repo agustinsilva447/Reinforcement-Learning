@@ -46,3 +46,4 @@ n3			packets 	(10 nodos)
 
 n3			packets 	(20 nodos)
 ---------------------
+50 			137
