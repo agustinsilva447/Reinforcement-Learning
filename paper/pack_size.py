@@ -148,10 +148,10 @@ def checkear_nozero(rx,ry,rz):
     fidelity = state_fidelity(outputstate, target_state)
     return (np.abs(outputstate[0]) != 1), fidelity    
 
-n1 = 15                                                                                   # cantidad de ciudades
+n1 = 10                                                                                   # cantidad de ciudades
 #n2_array = np.arange(int(np.ceil(0.5*n1)), int(np.ceil(5 * n1)), int(np.ceil(0.5*n1)))   # cantidad de paquetes
-n2_array = np.arange(20, 85, 5)                                                           # cantidad de paquetes
-n3 = 80                                                                                   # distancia máxima
+n2_array = np.arange(5, 55, 5)                                                           # cantidad de paquetes
+n3 = 20                                                                                   # distancia máxima
 n4 = 100                                                                                  # cantidad de iteraciones   
 p1 = [[0], [np.pi/2, np.pi/4, 0, 1]] 
 

@@ -9,12 +9,14 @@ pk_10 = [76, 56, 52, 46, 45, 42, 38, 37, 34, 32, 32, 30  , 29, 27,   24, 23, 21,
 n3_20 = [20,  25,  30,  40,  50,  60,  70,  80,  90,  100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200]
 pk_20 = [200, 184, 168, 150, 137, 130, 121, 114, 110, 108, 104, 98,  95,  95,  91,  88,  85,  0,   0,   0]
 
-nodos = [5,  10, 15, 20]
-mxdis = [11, 41, 80, 180]
+nodos = [5,  7,  9,  10, 11, 13, 15, 17,  19,  20]
+mxdis = [11, 15, 31, 41, 50, 65, 80, 110, 140, 180]
 
 #plt.plot(n3_5,  pk_5,  'r', label =  "5 nodos")
 #plt.plot(n3_10, pk_10, 'g', label = "10 nodos")
 #plt.plot(n3_20, pk_20, 'b', label = "20 nodos")     
-plt.plot(nodos, mxdis)
-plt.legend()       
+plt.plot(nodos, mxdis, marker='o')
+plt.title("Distance for quantum protocol to surpass classical.")
+plt.xlabel("N° Nodes")
+plt.ylabel("Size of Network")        
 plt.show()
