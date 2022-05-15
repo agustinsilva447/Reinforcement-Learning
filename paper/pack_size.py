@@ -150,7 +150,7 @@ def checkear_nozero(rx,ry,rz):
 
 n1 = 15                                                                                   # cantidad de ciudades
 #n2_array = np.arange(int(np.ceil(0.5*n1)), int(np.ceil(5 * n1)), int(np.ceil(0.5*n1)))   # cantidad de paquetes
-n2_array = np.arange(40, 60, 2)                                                           # cantidad de paquetes
+n2_array = np.arange(10, 150, 10)                                                         # cantidad de paquetes
 n3 = 85                                                                                   # distancia máxima
 n4 = 50                                                                                   # cantidad de iteraciones   
 p1 = [[0], [np.pi/2, np.pi/4, 0, 1]] 
