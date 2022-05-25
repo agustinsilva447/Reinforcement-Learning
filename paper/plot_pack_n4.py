@@ -18,7 +18,10 @@ mxdis = [11, 15, 31, 41, 50, 65, 81, 110, 140, 175]
 plt.plot(n3_5,  pk_5,  'r', label =  "5 nodos")
 plt.plot(n3_10, pk_10, 'g', label = "10 nodos")
 plt.plot(n3_15, pk_15, 'c', label = "15 nodos")
-plt.plot(n3_20, pk_20, 'b', label = "20 nodos")          
+plt.plot(n3_20, pk_20, 'b', label = "20 nodos")    
+plt.title("N° of packets for quantum protocol to surpass classical.")
+plt.xlabel("Size of Network")
+plt.ylabel("Number of packets")        
 plt.legend() 
 plt.show()
 
