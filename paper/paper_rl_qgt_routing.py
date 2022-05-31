@@ -206,11 +206,11 @@ class Bandit:
         self.time = 0
 
     def act(self):
+        self.epsilon *= self.e_decay
         if self.gradient:
-            exp_est = np.exp(self.q_estimation)
+            exp_est = np.exp(self.q_estimation*self.epsilon_0)
             self.action_prob = exp_est / np.sum(exp_est)
             return np.random.choice(self.indices, p=self.action_prob)
-        self.epsilon *= self.e_decay
         if np.random.rand() < self.epsilon:
             return np.random.choice(self.indices)
         q_best = np.max(self.q_estimation)
@@ -285,53 +285,69 @@ def VQC():
     N_SIZE = 3
     angulos = np.arange(0, 2 * np.pi, 2 * np.pi / np.power(2, N_SIZE))
     all_actions = [(rx,ry,rz) for rx in angulos for ry in angulos for rz in angulos]
-    time = 512
-    runs = 10
+    time = 100
+    runs = 1
     # maxima distancio 140  -> best time 153.338
     # maxima distancio 14   -> best time 37.4592
     # maxima distancia 0.14 -> best time 16.4807
+    """n3 = [[14,        0.14,     14],
+        [0,         512,      768,      time],
+        [37.4592,   16.4807,  37.4592]]"""
     n3 = [[14],
           [0, time],
           [37.4592]]
-    epsilon_0 = 0.99
+    epsilon_e = 0.99
     epsilon_f = 0.01
-    e_decay = np.power(epsilon_f/epsilon_0, 1/time)    
+    e_decay = np.power(epsilon_f/epsilon_e, 1/time)   
 
     bandits = []
-    bandits.append(Bandit(all_actions=all_actions))
-    bandits.append(Bandit(all_actions=all_actions, sample_averages=True))
-    bandits.append(Bandit(all_actions=all_actions, epsilon_0=epsilon_0, e_decay=e_decay))
-    bandits.append(Bandit(all_actions=all_actions, epsilon_0=epsilon_0, e_decay=e_decay, sample_averages=True))
-    bandits.append(Bandit(all_actions=all_actions, gradient=True))
-    bandits.append(Bandit(all_actions=all_actions, sample_averages=True, gradient=True))
-    labels = [
-        'e = 0.1, a = 0.1',
-        'e = 0.1, a = 1/n', 
-        'e = decay, a = 0.1', 
-        'e = decay, a = 1/n', 
-        'gradient ascent, a = 0.1', 
-        'gradient ascent, a = 1/n'
-    ]
+    labels = []
+    bandits.append(Bandit(all_actions=all_actions, epsilon_0=0.1, step_size=0.5))
+    labels.append('TD, e = 0.1, a = 0.5')
+    bandits.append(Bandit(all_actions=all_actions, epsilon_0=0.1, sample_averages=True))
+    labels.append('TD, e = 0.1, a = 1/n')
+    bandits.append(Bandit(all_actions=all_actions, epsilon_0=epsilon_e, e_decay=e_decay, step_size=0.1))
+    labels.append('TD, e = decay, a = 0.1')
+    bandits.append(Bandit(all_actions=all_actions, epsilon_0=epsilon_e, e_decay=e_decay, sample_averages=True))
+    labels.append('TD, e = decay, a = 1/n')
+    bandits.append(Bandit(all_actions=all_actions, epsilon_0=0.3, gradient=True, step_size=0.1))
+    labels.append('GA, e = 0.3, a = 0.1')
+    bandits.append(Bandit(all_actions=all_actions, epsilon_0=0.1, sample_averages=True, gradient=True))
+    labels.append('GA, e = 0.1, a = 1/n')
+
     rewards , rewards_avg, perf_network, perf_network_avg, fidelities, fidelities_avg = simulate(bandits, all_actions, n3, time, runs, labels)
     
-    fig, axs = plt.subplots(2, 2, figsize=(30,30))
+    fig, axs = plt.subplots(2, 3, figsize=(30,15))
     for i in range(len(bandits)):
         axs[0,0].plot(rewards[i], label=labels[i])
-        axs[1,0].plot(rewards_avg[i], label=labels[i])
-        axs[0,1].plot(perf_network_avg[i], label=labels[i])
-        axs[1,1].plot(fidelities_avg[i], label=labels[i])
+        axs[1,0].plot(rewards_avg[i], label=labels[i])    
+        axs[0,1].plot(perf_network[i], label=labels[i])
+        axs[1,1].plot(perf_network_avg[i], label=labels[i])
+        axs[0,2].plot(fidelities[i], label=labels[i])
+        axs[1,2].plot(fidelities_avg[i], label=labels[i])
 
-    axs[0,0].set_title("Learning Quantum Strategies (Total time)")
+    axs[0,0].set_title("Learning Quantum Strategies (Time)")
     axs[1,0].set_title("Learning Quantum Strategies (Avg time)")
-    axs[0,1].set_title("Learning Quantum Strategies (Avg performance)")
-    axs[1,1].set_title("Learning Quantum Strategies (Fidelity)")
+    axs[0,1].set_title("Learning Quantum Strategies (Performance)")
+    axs[1,1].set_title("Learning Quantum Strategies (Avg performance)")
+    axs[0,2].set_title("Learning Quantum Strategies (Fidelity)")
+    axs[1,2].set_title("Learning Quantum Strategies (Avg fidelity)")
+
     axs[0,0].set_ylabel("Total Time")
     axs[1,0].set_ylabel("Avg Time")
-    axs[0,1].set_ylabel("Mean Perf %")
-    axs[1,1].set_ylabel("Mean Fidelity")
+    axs[0,1].set_ylabel("Perf %")
+    axs[1,1].set_ylabel("Mean Perf %")
+    axs[0,2].set_ylabel("Fidelity")
+    axs[1,2].set_ylabel("Mean Fidelity")
+
+    axs[0,0].set_xlabel("Episodes")
+    axs[0,1].set_xlabel("Episodes")
+    axs[0,2].set_xlabel("Episodes")
     axs[1,0].set_xlabel("Episodes")
     axs[1,1].set_xlabel("Episodes")
-    axs[0,0].legend()
+    axs[1,2].set_xlabel("Episodes")
+    axs[0,0].legend(loc="upper right")
+    axs[1,0].legend(loc="upper right")
     plt.show()
 
 if __name__ == '__main__':
