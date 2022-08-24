@@ -1,0 +1,83 @@
+Authors present an application of Q learning for routing
+strategies in a Quantum communication network, previously
+presented as a game theoretical problem in recent work.
+I summarize my comments in the following points, from major
+to minor in relative importance.
+
+- Authors should establish clearly and earlier in the paper
+the main contribution in comparison with their previous
+work (Silva et al 2022). The first mention (and only)
+appears only on page 4, with the statement "In Silva et al.
+(2022), a strategy was proposed based on knowledge of the
+problem. However, in this case, the system will deduce it
+based only on experience".
+
+- The problem statement regarding the Q-Learning algorithm
+applied is not clear. First, the problem looks multi-agent
+in nature (since one agent's strategy will affect the delay
+of other agents). Authors should explicitly state:
+     1. What is a strategy in this case (I understood is a
+selection of discretized parameters theta, phi, lambda in
+the discrete space created by the "tile coding"?)
+     2. What is the reward? Does it depend on all agent's
+strategies? Is it common?
+     3. What is the time subscript? is it just repeated
+iterations of randomised strategy selections of the game
+for a fixed network? Or is
+it steps in the routing process?
+
+- The authors write the routing problem as a stateless
+game, but it is not clear that this is the case. Is the
+strategy selection independent of the state of the network?
+(state being e.g. number of nodes, edges, and starting node
+of the package). If the problem is indeed state dependent,
+authors need to expand the formulation to a state-action
+value function.
+
+- Authors state that the game converges to a common
+strategy, where all agents pick the same set of variables.
+Is this an expected behaviour of (optimal) routing in
+quantum networks? If so, why not restrict the setting of
+the Q learning algorithm to a single agent case, where we
+consider a single strategy that all agents apply, and
+measure the received total reward?
+
+- Regarding the last point, it is not clear to me why a
+value function is needed. Couldn't the problem be solved by
+a (Monte-Carlo) search over the parameter space \theta x
+\phi x \lambda? Since there are no transitions in the
+system (the game is stateless), the strategy space is
+discretised into a reasonable-size space, and the game
+seems to converge to common strategies among all agents,
+one could take all strategies in the set, simulate them N
+times and build an estimator for the expectation and
+variance of the corresponding reward, and then pick the
+best one. 
+
+Minor comments:
+
+- Maybe out of non-familiarity with quantum networks, but
+is the choice of graph (Erdos-Renyi-Gilbert) a design
+choice, or a requirement for quantum networks? What about
+other types of graphs?
+
+- Typo on Figure 5 (nodos -> nodes). 
+
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+
+The paper discusses quantum networks and puts forward a
+learning approach to distill policies for such nets. The
+discussion of quantum nets is a big IF for the venue, as it
+appears not at its core. Indeed, I am not familiar with
+such application and underpinning maths, and cannot
+adjudicate the contribution. This work leverages and
+recalls many results from a previously published paper by
+the same authors. The new but is the policy synthesis, via
+RL - the applications is unsurprising, and some RL notions
+discussed lightly, for example the necessary use of space
+partitions to run RL algos. The outcomes are OK, but I was
+very surprised to see a claim that the approach can
+naturally deal with adaptive systems, as this is a domain
+where RL algos are known to struggle. 
